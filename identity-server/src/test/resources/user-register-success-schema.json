@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "/",
+  "type": "object",
+  "properties": {
+    "status": {
+      "id": "status",
+      "type": "integer"
+    },
+    "message": {
+      "id": "message",
+      "type": "string"
+    },
+    "data": {
+      "id": "data",
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "email",
+        "authentication_token"
+      ],
+      "properties": {
+        "id": {
+          "id": "id",
+          "type": "integer"
+        },
+        "name": {
+          "id": "name",
+          "type": "string"
+        },
+        "email": {
+          "id": "email",
+          "type": "string"
+        },
+        "password": {
+          "id": "password",
+          "type": "string"
+        },
+        "authentication_token": {
+          "id": "authentication_token",
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "status",
+    "message"
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "/",
+  "type": "object",
+  "properties": {
+    "status": {
+      "id": "status",
+      "type": "integer"
+    },
+    "message": {
+      "id": "message",
+      "type": "string"
+    },
+    "data": {
+      "id": "data",
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "software_version",
+        "device_code"
+      ],
+      "properties": {
+        "id": {
+          "id": "id",
+          "type": "integer"
+        },
+        "name": {
+          "id": "name",
+          "type": "string"
+        },
+        "software_version": {
+          "id": "software_version",
+          "type": "string"
+        },
+        "notification_type": {
+          "id": "notification_type",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "registration_id": {
+          "id": "registration_id",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sns_endpoint": {
+          "id": "sns_endpoint",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "user_id": {
+          "id": "user_id",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "device_code": {
+          "id": "device_code",
+          "type": "string"
+        },
+        "app_unique_id": {
+          "id": "app_unique_id",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "created_at": {
+          "id": "created_at",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "updated_at": {
+          "id": "updated_at",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "device_app_notification_settings": {
+          "id": "device_app_notification_settings",
+          "type": [
+            "array",
+            "null"
+          ],
+          "minItems": 0
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "message",
+    "data"
+  ]
+}

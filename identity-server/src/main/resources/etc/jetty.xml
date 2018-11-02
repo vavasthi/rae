@@ -1,0 +1,29 @@
+<?xml version="1.0"  encoding="UTF-8"?>
+<!--
+  ~ Copyright 2016 (c) Hubble Connected (HKT) Ltd. - All Rights Reserved
+  ~
+  ~ Proprietary and confidential.
+  ~
+  ~ Unauthorized copying of this file, via any medium is strictly prohibited.
+  -->
+
+<!DOCTYPE Configure PUBLIC "-//Mort Bay Consulting//DTD Configure//EN" "http://jetty.eclipse.org/configure.dtd">
+<Configure class="org.eclipse.jetty.webapp.WebAppContext">
+
+    <Set token="resourceBase">
+        <SystemProperty token="app.content.base" default="/"/>
+    </Set>
+
+    <!-- Error Page by Code -->
+    <Get token="errorHandler">
+        <Call token="addErrorPage">
+            <Arg type="int">404</Arg>
+            <Arg type="String">/404.html</Arg>
+        </Call>
+        <Call token="addErrorPage">
+            <Arg type="int">500</Arg>
+            <Arg type="String">/500.html</Arg>
+        </Call>
+    </Get>
+
+</Configure>

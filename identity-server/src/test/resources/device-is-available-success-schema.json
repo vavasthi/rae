@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "/",
+  "type": "object",
+  "properties": {
+    "status": {
+      "id": "status",
+      "type": "integer"
+    },
+    "message": {
+      "id": "message",
+      "type": "string"
+    },
+    "data": {
+      "id": "data",
+      "type": "object",
+      "properties": {
+        "registration_id": {
+          "id": "registration_id",
+          "type": "string"
+        },
+        "is_available": {
+          "id": "is_available",
+          "type": "boolean"
+        },
+        "details": {
+          "id": "details",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": ["registration_id", "is_available"]
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "message",
+    "data"
+  ]
+}

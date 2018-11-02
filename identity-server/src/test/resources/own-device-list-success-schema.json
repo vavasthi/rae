@@ -1,0 +1,348 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "/",
+  "type": "object",
+  "properties": {
+    "status": {
+      "id": "status",
+      "type": "integer"
+    },
+    "message": {
+      "id": "message",
+      "type": "string"
+    },
+    "data": {
+      "id": "data",
+      "type": "array",
+      "items": {
+        "id": "0",
+        "type": "object",
+        "properties": {
+          "id": {
+            "id": "id",
+            "type": "integer"
+          },
+          "name": {
+            "id": "name",
+            "type": "string"
+          },
+          "registration_id": {
+            "id": "registration_id",
+            "type": "string"
+          },
+          "mac_address": {
+            "id": "mac_address",
+            "type": "string"
+          },
+          "time_zone": {
+            "id": "time_zone",
+            "type": "integer"
+          },
+          "is_available": {
+            "id": "is_available",
+            "type": "boolean"
+          },
+          "snaps_url": {
+            "id": "snaps_url",
+            "type": "string"
+          },
+          "snaps_modified_at": {
+            "id": "snaps_modified_at",
+            "type": "null"
+          },
+          "device_model_id": {
+            "id": "device_model_id",
+            "type": "integer"
+          },
+          "mode": {
+            "id": "mode",
+            "type": "string"
+          },
+          "parent": {
+            "id": "parent",
+            "type": "null"
+          },
+          "firmware_version": {
+            "id": "firmware_version",
+            "type": "string"
+          },
+          "firmware_status": {
+            "id": "firmware_status",
+            "type": "integer"
+          },
+          "firmware_time": {
+            "id": "firmware_time",
+            "type": "null"
+          },
+          "plan_id": {
+            "id": "plan_id",
+            "type": "string"
+          },
+          "plan_changed_at": {
+            "id": "plan_changed_at",
+            "type": "string"
+          },
+          "last_accessed_date": {
+            "id": "last_accessed_date",
+            "type": "string"
+          },
+          "deactivate": {
+            "id": "deactivate",
+            "type": "boolean"
+          },
+          "target_deactivate_date": {
+            "id": "target_deactivate_date",
+            "type": "null"
+          },
+          "upnp_usage": {
+            "id": "upnp_usage",
+            "type": "integer"
+          },
+          "stun_usage": {
+            "id": "stun_usage",
+            "type": "integer"
+          },
+          "relay_usage": {
+            "id": "relay_usage",
+            "type": "integer"
+          },
+          "upnp_count": {
+            "id": "upnp_count",
+            "type": "integer"
+          },
+          "stun_count": {
+            "id": "stun_count",
+            "type": "integer"
+          },
+          "relay_count": {
+            "id": "relay_count",
+            "type": "integer"
+          },
+          "high_relay_usage": {
+            "id": "high_relay_usage",
+            "type": "boolean"
+          },
+          "relay_usage_reset_date": {
+            "id": "relay_usage_reset_date",
+            "type": "null"
+          },
+          "latest_relay_usage": {
+            "id": "latest_relay_usage",
+            "type": "integer"
+          },
+          "created_at": {
+            "id": "created_at",
+            "type": "string"
+          },
+          "updated_at": {
+            "id": "updated_at",
+            "type": "string"
+          },
+          "registration_at": {
+            "id": "registration_at",
+            "type": "string"
+          },
+          "user_id": {
+            "id": "user_id",
+            "type": "integer"
+          },
+          "host_ssid": {
+            "id": "host_ssid",
+            "type": "string"
+          },
+          "host_router": {
+            "id": "host_router",
+            "type": "null"
+          },
+          "status": {
+            "id": "status",
+            "type": "null"
+          },
+          "mqtt_topic_code": {
+            "id": "mqtt_topic_code",
+            "type": "null"
+          },
+          "attributes": {
+            "id": "attributes",
+            "type": "object",
+            "properties": {
+              "badblock": {
+                "id": "badblock",
+                "type": "string"
+              },
+              "ms": {
+                "id": "ms",
+                "type": "string"
+              },
+              "me": {
+                "id": "me",
+                "type": "string"
+              },
+              "vs": {
+                "id": "vs",
+                "type": "string"
+              },
+              "vt": {
+                "id": "vt",
+                "type": "string"
+              },
+              "hs": {
+                "id": "hs",
+                "type": "string"
+              },
+              "ls": {
+                "id": "ls",
+                "type": "string"
+              },
+              "ht": {
+                "id": "ht",
+                "type": "string"
+              },
+              "lt": {
+                "id": "lt",
+                "type": "string"
+              },
+              "mvr": {
+                "id": "mvr",
+                "type": "string"
+              },
+              "cs": {
+                "id": "cs",
+                "type": "string"
+              },
+              "streammode": {
+                "id": "streammode",
+                "type": "string"
+              },
+              "p2p_protocol": {
+                "id": "p2p_protocol",
+                "type": "string"
+              },
+              "cv_version": {
+                "id": "cv_version",
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          "device_location": {
+            "id": "device_location",
+            "type": "object",
+            "properties": {
+              "remote_ip": {
+                "id": "remote_ip",
+                "type": "string"
+              },
+              "remote_port_1": {
+                "id": "remote_port_1",
+                "type": "null"
+              },
+              "remote_port_2": {
+                "id": "remote_port_2",
+                "type": "null"
+              },
+              "remote_port_3": {
+                "id": "remote_port_3",
+                "type": "null"
+              },
+              "remote_port_4": {
+                "id": "remote_port_4",
+                "type": "null"
+              },
+              "local_ip": {
+                "id": "local_ip",
+                "type": "string"
+              },
+              "local_port_1": {
+                "id": "local_port_1",
+                "type": "null"
+              },
+              "local_port_2": {
+                "id": "local_port_2",
+                "type": "null"
+              },
+              "local_port_3": {
+                "id": "local_port_3",
+                "type": "null"
+              },
+              "local_port_4": {
+                "id": "local_port_4",
+                "type": "null"
+              }
+            },
+            "additionalProperties": false
+          },
+          "device_settings": {
+            "id": "device_settings",
+            "type": "array",
+            "items": {
+              "id": "0",
+              "type": "object",
+              "properties": {
+                "key": {
+                  "id": "key",
+                  "type": "string"
+                },
+                "value": {
+                  "id": "value",
+                  "type": "string"
+                },
+                "updated_at": {
+                  "id": "updated_at",
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "device_free_trial": {
+            "id": "device_free_trial",
+            "type": "object",
+            "properties": {
+              "id": {
+                "id": "id",
+                "type": "integer"
+              },
+              "plan_id": {
+                "id": "plan_id",
+                "type": "string"
+              },
+              "status": {
+                "id": "status",
+                "type": "string"
+              },
+              "trial_period_days": {
+                "id": "trial_period_days",
+                "type": "integer"
+              },
+              "created_at": {
+                "id": "created_at",
+                "type": "string"
+              },
+              "updated_at": {
+                "id": "updated_at",
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          "free_trial_quota": {
+            "id": "free_trial_quota",
+            "type": "integer"
+          },
+          "free_trial_days_left": {
+            "id": "free_trial_days_left",
+            "type": "integer"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "message",
+    "data"
+  ]
+}

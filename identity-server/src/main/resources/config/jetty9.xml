@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2016 (c) Hubble Connected (HKT) Ltd. - All Rights Reserved
+  ~
+  ~ Proprietary and confidential.
+  ~
+  ~ Unauthorized copying of this file, via any medium is strictly prohibited.
+  -->
+
+<Configure class="org.eclipse.jetty.webapp.WebAppContext">
+  <New id="demoDS" class="org.eclipse.jetty.plus.jndi.Resource">
+    <Arg></Arg>
+    <Arg>jdbc/restDemoDB</Arg>
+    <Arg>
+      <New class="com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource">
+        <Set token="Url">jdbc:mysql://localhost:3306/rest_demo?allowMultiQueries=true</Set>
+        <Set token="User">rest_demo</Set>
+        <Set token="Password">rest_demo</Set>
+      </New>
+    </Arg>
+  </New>
+  <New id="demoLegacyDS" class="org.eclipse.jetty.plus.jndi.Resource">
+    <Arg></Arg>
+    <Arg>jdbc/restDemoLegacyDB</Arg>
+    <Arg>
+      <New class="com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource">
+        <Set token="Url">jdbc:mysql://localhost:3306/rest_demo_legacy?allowMultiQueries=true</Set>
+        <Set token="User">rest_demo</Set>
+        <Set token="Password">rest_demo</Set>
+      </New>
+    </Arg>
+  </New>
+</Configure>

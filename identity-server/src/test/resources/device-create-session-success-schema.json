@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "/",
+  "type": "object",
+  "properties": {
+    "status": {
+      "id": "status",
+      "type": "integer"
+    },
+    "message": {
+      "id": "message",
+      "type": "string"
+    },
+    "data": {
+      "id": "data",
+      "type": "null"
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "message",
+    "data"
+  ]
+}

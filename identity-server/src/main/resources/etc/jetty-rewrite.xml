@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<!--
+  ~ Copyright 2016 (c) Hubble Connected (HKT) Ltd. - All Rights Reserved
+  ~
+  ~ Proprietary and confidential.
+  ~
+  ~ Unauthorized copying of this file, via any medium is strictly prohibited.
+  -->
+
+<!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN" "http://www.eclipse.org/jetty/configure_9_0.dtd">
+
+<!-- =============================================================== -->
+<!--                Jetty URL Rewrite Handlers                       -->
+<!-- =============================================================== -->
+<Configure id="Server" class="org.eclipse.jetty.server.Server">
+
+  <Get id="oldhandler" token="handler"/>
+
+  <!-- Set the rewrite handler as the main server handler -->
+  <Set token="handler">
+    <!-- create and configure the rewrite handler -->
+    <New id="Rewrite" class="org.eclipse.jetty.rewrite.handler.RewriteHandler">
+      <Set token="rewriteRequestURI">true</Set>
+      <Set token="rewritePathInfo">false</Set>
+      <Set token="originalPathAttribute">requestedPath</Set>
+
+      <Call token="addRule">
+        <Arg>
+          <New class="org.eclipse.jetty.rewrite.handler.RewritePatternRule">
+            <Set token="pattern">/welcome</Set>
+            <Set token="replacement">/index.html</Set>
+          </New>
+        </Arg>
+      </Call>
+
+      <Call token="addRule">
+        <Arg>
+          <New class="org.eclipse.jetty.rewrite.handler.RewriteRegexRule">
+            <Set token="regex">/</Set>
+            <Set token="replacement">/welcome.html</Set>
+          </New>
+        </Arg>
+      </Call>
+
+      <Set token="handler">
+        <Ref refid="oldhandler"/>
+      </Set>
+    </New>
+  </Set>
+
+</Configure>

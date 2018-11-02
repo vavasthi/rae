@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "/",
+  "type": "object",
+  "properties": {
+    "status": {
+      "id": "status",
+      "type": "integer"
+    },
+    "message": {
+      "id": "message",
+      "type": "string"
+    },
+    "data": {
+      "id": "data",
+      "type": "object",
+      "properties": {
+        "created_at": {
+          "id": "created_at",
+          "type": "string"
+        },
+        "id": {
+          "id": "id",
+          "type": "string"
+        },
+        "job_type": {
+          "id": "job_type",
+          "type": "string"
+        },
+        "last_executed_time": {
+          "id": "last_executed_time",
+          "type": "string"
+        },
+        "output": {
+          "id": "output",
+          "type": "object",
+          "properties": {
+            "rtmp_url": {
+              "id": "rtmp_url",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "priority": {
+          "id": "priority",
+          "type": "string"
+        },
+        "state": {
+          "id": "state",
+          "type": "string"
+        },
+        "status": {
+          "id": "status",
+          "type": "integer"
+        },
+        "updated_at": {
+          "id": "updated_at",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": ["created_at","id","job_type","last_executed_time","priority","state","output","status","updated_at"]
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "message",
+    "data"
+  ]
+}
