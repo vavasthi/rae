@@ -1,13 +1,13 @@
-package com.sanjnan.rae.identityserver.service;
+package com.sanjnan.rae.identityserver.services;
 
 import com.sanjnan.rae.common.constants.SanjnanConstants;
 import com.sanjnan.rae.common.exception.TokenExpiredException;
 import com.sanjnan.rae.common.exception.UnauthorizedException;
 import com.sanjnan.rae.common.exception.UnrecoganizedRemoteIPAddressException;
 import com.sanjnan.rae.common.utils.H2OPasswordEncryptionManager;
-import com.sanjnan.rae.identityserver.caching.AccountCacheService;
-import com.sanjnan.rae.identityserver.caching.SessionCacheService;
-import com.sanjnan.rae.identityserver.caching.TenantCacheService;
+import com.sanjnan.rae.identityserver.data.couchbase.AccountRepository;
+import com.sanjnan.rae.identityserver.data.couchbase.SessionRepository;
+import com.sanjnan.rae.identityserver.data.couchbase.TenantRepository;
 import com.sanjnan.rae.identityserver.pojos.*;
 import com.sanjnan.rae.identityserver.security.filters.SanjnanAuthenticationThreadLocal;
 import org.apache.commons.codec.binary.Hex;
@@ -31,11 +31,11 @@ import java.util.stream.Collectors;
 public class H2OTokenService  {
 
   @Autowired
-  private AccountCacheService accountCacheService;
+  private AccountRepository accountRepository;
   @Autowired
-  private TenantCacheService tenantCacheService;
+  private TenantRepository tenantRepository;
   @Autowired
-  private SessionCacheService sessionCacheService;
+  private SessionRepository sessionRepository;
 
 
   /**
@@ -66,11 +66,11 @@ public class H2OTokenService  {
                                             String password)
           throws DatatypeConfigurationException {
 
-    Optional<Tenant> tenantOptional = tenantCacheService.findByDiscriminator(tenantDiscriminator);
+    Optional<Tenant> tenantOptional = tenantRepository.findByDiscriminator(tenantDiscriminator);
     if (tenantOptional.isPresent()) {
 
       Tenant tenant = tenantOptional.get();
-      Optional<Account> accountOptional = accountCacheService.findByName(tenant.getId(), username);
+      Optional<Account> accountOptional = accountRepository.findAccountByTenantIdAndAndName(tenant.getId(), username);
       if (accountOptional.isPresent()) {
 
         Account account = accountOptional.get();
@@ -78,11 +78,11 @@ public class H2OTokenService  {
 
           UUID sessionId = account.getSessionMap().get(applicationId);
           if (sessionId != null) {
-            Optional<Session> sessionOptional = sessionCacheService.findOne(sessionId);
+            Optional<Session> sessionOptional = sessionRepository.findById(sessionId);
             if (sessionOptional.isPresent()) {
               Session session = sessionOptional.get();
               deleteToken(tenant, account, session);
-              accountOptional = accountCacheService.findOne(account.getId());
+              accountOptional = accountRepository.findById(account.getId());
               account = accountOptional.get();
             }
           }
@@ -121,18 +121,19 @@ public class H2OTokenService  {
                                                        String applicationId,
                                                        String authToken) throws DatatypeConfigurationException {
 
-    Optional<Tenant> tenantOptional = tenantCacheService.findByDiscriminator(tenantDiscriminator);
+    Optional<Tenant> tenantOptional = tenantRepository.findByDiscriminator(tenantDiscriminator);
     if (tenantOptional.isPresent()) {
 
       Tenant tenant = tenantOptional.get();
-      Optional<Account> accountOptional = accountCacheService.findByAuthToken(tenant.getId(), authToken);
-      if (accountOptional.isPresent()) {
+      Optional<Session> sessionOptional = sessionRepository.findByAuthToken(authToken);
+      if (sessionOptional.isPresent()) {
 
-        Account account = accountOptional.get();
-        Optional<Session> sessionOptional = sessionCacheService.findByAuthToken(tenant.getId(), authToken);
+        Session session = sessionOptional.get();
+        Optional<Account> accountOptional = accountRepository.findById(session.getAccountId());
+        if (accountOptional.isPresent()) {
 
-        if (sessionOptional.isPresent()) {
-          Session session = sessionOptional.get();
+          Account account = accountOptional.get();
+
           if (session.getApplicationId().equals(applicationId)) {
             if (session.getExpiry().isBefore(new DateTime())) {
 
@@ -151,32 +152,32 @@ public class H2OTokenService  {
                             session.getExpiry(),
                             account.getH2ORoles()));
           }
-        } else {
-
-          throw new UnauthorizedException(String.format("Token %s doesn't belong to application %s", authToken, applicationId));
         }
+      } else {
+
+        throw new UnauthorizedException(String.format("Token %s doesn't belong to application %s", authToken, applicationId));
       }
     }
     throw new BadCredentialsException(tenantDiscriminator + "/" + remoteAddr);
   }
+
   private H2OUsernameAndTokenResponse refreshAppToken(String tenantDiscriminator,
                                                       String remoteAddr,
                                                       String applicationId,
                                                       String authToken)
           throws DatatypeConfigurationException {
 
-    Optional<Tenant> tenantOptional = tenantCacheService.findByDiscriminator(tenantDiscriminator);
+    Optional<Tenant> tenantOptional = tenantRepository.findByDiscriminator(tenantDiscriminator);
     if (tenantOptional.isPresent()) {
       Tenant tenant = tenantOptional.get();
-      Optional<Account> accountOptional = accountCacheService.findByAuthToken(tenant.getId(), authToken);
-      if (accountOptional.isPresent()) {
+      Optional<Session> sessionOptional = sessionRepository.findByAuthToken(authToken);
+      if (sessionOptional.isPresent()) {
 
-        Account account = accountOptional.get();
-        Optional<Session> sessionOptional = sessionCacheService.findByAuthToken(tenant.getId(), authToken);
+        Session session = sessionOptional.get();
+        Optional<Account> accountOptional = accountRepository.findById(session.getAccountId());
 
-        if (sessionOptional.isPresent()) {
-          Session session = sessionOptional.get();
-          accountCacheService.evictFromCache(account);
+        if (accountOptional.isPresent()) {
+          Account account = accountOptional.get();
           return assignAuthTokenToUser(tenant, account, session, account.getName());
         }
         else {
@@ -198,7 +199,7 @@ public class H2OTokenService  {
     }
     UUID sessionId = account.getSessionMap().get(applicationId);
     if (sessionId != null) {
-      Optional<Session> sessionOptional = sessionCacheService.findOne(sessionId);
+      Optional<Session> sessionOptional = sessionRepository.findById(sessionId);
       if (sessionOptional.isPresent()) {
         return assignAuthTokenToUser(tenant, account, sessionOptional.get(), account.getName());
       }
@@ -208,8 +209,8 @@ public class H2OTokenService  {
     Session session
             = new Session(tenant.getId(), account, generateAuthToken(tenant, account.getName()), remoteAddr, applicationId, expiry, Session.SESSION_TYPE.APPLICATION_SESSION);
     account.getSessionMap().put(applicationId, session.getId());
-    accountCacheService.save(account);
-    sessionCacheService.save(session);
+    accountRepository.save(account);
+    sessionRepository.save(session);
     return new H2OUsernameAndTokenResponse(tenant.getDiscriminator(),
             account.getName(),
             new H2OTokenResponse(session.getAuthToken(),
@@ -234,7 +235,7 @@ public class H2OTokenService  {
 
     String authToken = generateAuthToken(tenant, account.getName());
     session.setAuthToken(authToken);
-    sessionCacheService.save(session);
+    sessionRepository.save(session);
     return new H2OUsernameAndTokenResponse(tenant.getDiscriminator(),
             username,
             new H2OTokenResponse(session.getAuthToken(),
@@ -247,15 +248,16 @@ public class H2OTokenService  {
                                                  Session session)
           throws DatatypeConfigurationException {
 
-    accountCacheService.deleteToken(account, session);
-    sessionCacheService.delete(session);
+    account.getSessionMap().remove(session.getApplicationId());
+    accountRepository.save(account);
+    sessionRepository.delete(session);
     SanjnanAuthenticationThreadLocal.INSTANCE.clear();
     return new H2OUsernameAndTokenResponse(tenant.getDiscriminator(),
-              account.getName(),
-              new H2OTokenResponse("",
-                      null,
-                      new DateTime(),
-                      account.getH2ORoles()));
+            account.getName(),
+            new H2OTokenResponse("",
+                    null,
+                    new DateTime(),
+                    account.getH2ORoles()));
   }
 
   private String generateAuthToken(Tenant tenant, String username) {

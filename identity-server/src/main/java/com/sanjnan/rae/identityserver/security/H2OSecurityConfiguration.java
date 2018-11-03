@@ -47,7 +47,7 @@ public class H2OSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
   @Override
   public void configure(WebSecurity web) throws Exception {
-    web.ignoring().antMatchers(SanjnanConstants.V6_SETUP_ENDPOINT);
+    web.ignoring().antMatchers(SanjnanConstants.V1_SETUP_ENDPOINT);
     web.ignoring().antMatchers("/manage/health");
     web.ignoring().antMatchers("/swagger-ui.html");
     web.ignoring().antMatchers("/webjars/**");

@@ -12,11 +12,15 @@ import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.sanjnan.rae.identityserver.security.H2OAuditorAware;
 import com.sanjnan.rae.identityserver.security.provider.H2OAuditingDateTimeProvider;
-import com.sanjnan.rae.identityserver.service.DateTimeService;
+import com.sanjnan.rae.identityserver.services.DateTimeService;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.data.auditing.DateTimeProvider;
@@ -29,9 +33,9 @@ import java.util.logging.Logger;
 /**
  * Created by vinay on 1/8/16.
  */
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.sanjnan.rae.identityserver"},
+        exclude = {DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
 @Configuration
-@EnableJpaAuditing(dateTimeProviderRef = "dateTimeProvider")
 @EnableTransactionManagement
 //@EnableSwagger2
 public class H2OIdentityManagerLauncher  extends SpringBootServletInitializer {
@@ -54,11 +58,6 @@ public class H2OIdentityManagerLauncher  extends SpringBootServletInitializer {
   @Bean
   public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
     return new PropertySourcesPlaceholderConfigurer();
-  }
-
-  @Bean
-  AuditorAware<String> auditorProvider() {
-    return new H2OAuditorAware();
   }
 
   @Bean

@@ -2,7 +2,7 @@ package com.sanjnan.rae.identityserver.security.provider;
 
 import com.sanjnan.rae.identityserver.pojos.H2OTokenResponse;
 import com.sanjnan.rae.identityserver.security.token.H2OTokenPrincipal;
-import com.sanjnan.rae.identityserver.service.H2OTokenService;
+import com.sanjnan.rae.identityserver.services.H2OTokenService;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;

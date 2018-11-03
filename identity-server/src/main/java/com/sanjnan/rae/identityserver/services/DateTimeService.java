@@ -1,4 +1,4 @@
-package com.sanjnan.rae.identityserver.service;
+package com.sanjnan.rae.identityserver.services;
 
 import org.springframework.stereotype.Service;
 

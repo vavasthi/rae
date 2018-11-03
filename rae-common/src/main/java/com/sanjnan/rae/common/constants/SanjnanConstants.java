@@ -371,10 +371,6 @@ public class SanjnanConstants {
    */
   public static final String VERSION_5 = "/v5";
   /**
-   * The constant VERSION_6.
-   */
-  public static final String VERSION_6 = "/v6";
-  /**
    * The constant APPLICATION_API_KEY_VARIABLE_NAME.
    */
   public static final String APPLICATION_API_KEY_VARIABLE_NAME = "api_key";
@@ -387,33 +383,33 @@ public class SanjnanConstants {
    */
   public static final String DEVICE_KEY_VARIABLE_NAME = "device_token";
   /**
-   * The constant V6_TENANTS_ENDPOINT.
+   * The constant V1_TENANTS_ENDPOINT.
    */
-  public static final String V6_TENANTS_ENDPOINT = VERSION_6 + "/internal/tenants";
+  public static final String V1_TENANTS_ENDPOINT = VERSION_1 + "/internal/tenants";
   /**
-   * The constant V6_COMPUTE_REGION_ENDPOINT.
+   * The constant V1_COMPUTE_REGION_ENDPOINT.
    */
-  public static final String V6_COMPUTE_REGION_ENDPOINT = VERSION_6 + "/internal/computeregions";
+  public static final String V1_COMPUTE_REGION_ENDPOINT = VERSION_1 + "/internal/computeregions";
   /**
-   * The constant V6_SETUP_ENDPOINT.
+   * The constant V1_SETUP_ENDPOINT.
    */
-  public static final String V6_SETUP_ENDPOINT = VERSION_6 + "/setup";
+  public static final String V1_SETUP_ENDPOINT = VERSION_1 + "/setup";
   /**
-   * The constant V6_ACCOUNTS_ENDPOINT.
+   * The constant V1_ACCOUNTS_ENDPOINT.
    */
-  public static final String V6_ACCOUNTS_ENDPOINT = VERSION_6 + "/{tenant}/accounts";
+  public static final String V1_ACCOUNTS_ENDPOINT = VERSION_1 + "/{tenant}/accounts";
   /**
-   * The constant V6_ADMINS_ENDPOINT.
+   * The constant V1_ADMINS_ENDPOINT.
    */
-  public static final String V6_ADMINS_ENDPOINT = VERSION_6 + "/admins";
+  public static final String V1_ADMINS_ENDPOINT = VERSION_1 + "/admins";
   /**
-   * The constant V6_AUTHENTICATE_URL.
+   * The constant V1_AUTHENTICATE_URL.
    */
-  public static final String V6_AUTHENTICATE_URL = VERSION_6 + "/" + TENANT_PARAMETER_PATTERN + "/authenticate";
+  public static final String V1_AUTHENTICATE_URL = VERSION_1 + "/" + TENANT_PARAMETER_PATTERN + "/authenticate";
   /**
-   * The constant V6_DEVICES_ENDPOINT.
+   * The constant V1_DEVICES_ENDPOINT.
    */
-  public static final String V6_DEVICES_ENDPOINT = VERSION_6 + "/{tenant}/devices";
+  public static final String V1_DEVICES_ENDPOINT = VERSION_1 + "/{tenant}/devices";
   /**
    * The constant RECURLY_ENDPOINT.
    */

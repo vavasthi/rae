@@ -6,20 +6,17 @@
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  */
 
-package com.sanjnan.rae.identityserver.endpoints.v6;
+package com.sanjnan.rae.identityserver.endpoints.v1;
 
 import com.sanjnan.rae.common.constants.SanjnanConstants;
-import com.sanjnan.rae.common.exception.BadRequestException;
 import com.sanjnan.rae.common.exception.MismatchedCredentialHeaderAndAuthException;
-import com.sanjnan.rae.identityserver.caching.AccountCacheService;
-import com.sanjnan.rae.identityserver.caching.SessionCacheService;
-import com.sanjnan.rae.identityserver.caching.TenantCacheService;
+import com.sanjnan.rae.identityserver.data.couchbase.AccountRepository;
+import com.sanjnan.rae.identityserver.data.couchbase.SessionRepository;
+import com.sanjnan.rae.identityserver.data.couchbase.TenantRepository;
 import com.sanjnan.rae.identityserver.pojos.*;
 import com.sanjnan.rae.identityserver.security.filters.SanjnanAuthenticationThreadLocal;
-import com.sanjnan.rae.identityserver.service.H2OTokenService;
-import org.joda.time.DateTime;
+import com.sanjnan.rae.identityserver.services.H2OTokenService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,7 +24,6 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
 import javax.xml.datatype.DatatypeConfigurationException;
 import java.util.*;
 
@@ -44,14 +40,14 @@ public class AuthenticationEndpoint extends BaseEndpoint {
   @Autowired
   private H2OTokenService tokenService;
   @Autowired
-  private TenantCacheService tenantCacheService;
+  private TenantRepository tenantRepository;
   @Autowired
-  private AccountCacheService accountCacheService;
+  private AccountRepository accountRepository;
   @Autowired
-  private SessionCacheService sessionCacheService;
+  private SessionRepository sessionRepository;
 
   @Transactional
-  @RequestMapping(value = SanjnanConstants.V6_AUTHENTICATE_URL, method = RequestMethod.POST)
+  @RequestMapping(value = SanjnanConstants.V1_AUTHENTICATE_URL, method = RequestMethod.POST)
   public String authenticate(@PathVariable("tenant") String tenant) {
     return "This is just for in-code-documentation purposes and Rest API reference documentation." +
             "Servlet will never get to this point as Http requests are processed by AuthenticationFilter." +
@@ -62,7 +58,7 @@ public class AuthenticationEndpoint extends BaseEndpoint {
   }
 
   @Transactional
-  @RequestMapping(value = SanjnanConstants.V6_AUTHENTICATE_URL + "/refresh", method = RequestMethod.POST)
+  @RequestMapping(value = SanjnanConstants.V1_AUTHENTICATE_URL + "/refresh", method = RequestMethod.POST)
   public H2OTokenResponse refresh(@PathVariable("tenant") String tenant) {
 
     HttpServletRequest httpRequest = asHttp(request);
@@ -85,7 +81,7 @@ public class AuthenticationEndpoint extends BaseEndpoint {
     }
   }
   @Transactional
-  @RequestMapping(value = SanjnanConstants.V6_AUTHENTICATE_URL + "/validate", method = RequestMethod.POST)
+  @RequestMapping(value = SanjnanConstants.V1_AUTHENTICATE_URL + "/validate", method = RequestMethod.POST)
   public H2OTokenResponse validate(@PathVariable("tenant") String tenant) {
 
     HttpServletRequest httpRequest = asHttp(request);
@@ -109,7 +105,7 @@ public class AuthenticationEndpoint extends BaseEndpoint {
   }
 
   @Transactional
-  @RequestMapping(value = SanjnanConstants.V6_AUTHENTICATE_URL, method = RequestMethod.DELETE)
+  @RequestMapping(value = SanjnanConstants.V1_AUTHENTICATE_URL, method = RequestMethod.DELETE)
   public List<H2OTokenResponse> deleteToken(@PathVariable("tenant") String discriminator) {
 
     HttpServletRequest httpRequest = asHttp(request);
@@ -126,7 +122,7 @@ public class AuthenticationEndpoint extends BaseEndpoint {
       account.getSessionMap().values().stream().forEach(e -> sessions.add(e));
       for (UUID sid : sessions) {
 
-        Optional<Session> sessionOptional = sessionCacheService.findOne(sid);
+        Optional<Session> sessionOptional = sessionRepository.findById(sid);
         if (sessionOptional.isPresent()) {
 
           H2OUsernameAndTokenResponse utResponse = tokenService.deleteToken(SanjnanAuthenticationThreadLocal.INSTANCE.getTenantThreadLocal().get(),
@@ -143,7 +139,7 @@ public class AuthenticationEndpoint extends BaseEndpoint {
   }
 
   @Transactional
-  @RequestMapping(value = SanjnanConstants.V6_AUTHENTICATE_URL + "/{token}", method = RequestMethod.DELETE)
+  @RequestMapping(value = SanjnanConstants.V1_AUTHENTICATE_URL + "/{token}", method = RequestMethod.DELETE)
   public H2OTokenResponse deleteToken(@PathVariable("tenant") String tenant,
                                       @PathVariable("token") String token) {
 

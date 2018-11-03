@@ -22,8 +22,6 @@ public class H2OEmbeddedJettyCustomizer {
 
     @Bean
     WebServerFactoryCustomizer<JettyServletWebServerFactory> containerCustomizer(
-            @Value("${keystore.file}") String keystoreFile,
-            @Value("${keystore.pass}") final String keystorePass,
             @Value("${server.port:8080}") final String port,
             @Value("${jetty.acceptqueuesize:5000}") final String acceptQueueSize,
             @Value("${jetty.threadPool.maxThreads:2000}") final String maxThreads,
@@ -34,9 +32,6 @@ public class H2OEmbeddedJettyCustomizer {
 
         // This is boiler plate code to setup https on embedded Tomcat
         // with Spring Boot:
-
-        final String absoluteKeystoreFile = new File(keystoreFile)
-                .getAbsolutePath();
 
         return container -> {
             container.addServerCustomizers((JettyServerCustomizer) server -> {

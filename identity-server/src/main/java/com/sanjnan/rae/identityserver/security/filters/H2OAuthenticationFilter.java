@@ -11,14 +11,14 @@ package com.sanjnan.rae.identityserver.security.filters;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sanjnan.rae.common.constants.SanjnanConstants;
 import com.sanjnan.rae.common.exception.MismatchedCredentialHeaderAndAuthException;
-import com.sanjnan.rae.identityserver.caching.AccountCacheService;
-import com.sanjnan.rae.identityserver.caching.TenantCacheService;
 import com.sanjnan.rae.identityserver.pojos.H2OTokenResponse;
 import com.sanjnan.rae.identityserver.pojos.H2OUsernameAndTokenResponse;
 import com.sanjnan.rae.identityserver.pojos.Tenant;
 import com.sanjnan.rae.identityserver.security.token.H2OPrincipal;
 import com.sanjnan.rae.identityserver.security.token.H2OTokenPrincipal;
-import com.sanjnan.rae.identityserver.service.H2OTokenService;
+import com.sanjnan.rae.identityserver.services.AccountService;
+import com.sanjnan.rae.identityserver.services.H2OTokenService;
+import com.sanjnan.rae.identityserver.services.TenantService;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -49,8 +49,8 @@ public class H2OAuthenticationFilter extends GenericFilterBean {
   public static final String TOKEN_SESSION_KEY = "token";
   public static final String USER_SESSION_KEY = "user";
   private final static Logger logger = Logger.getLogger(H2OAuthenticationFilter.class);
-  private AccountCacheService accountCacheService = null;
-  private TenantCacheService tenantCacheService = null;
+  private AccountService accountService = null;
+  private TenantService tenantService = null;
   private H2OTokenService tokenService = null;
   private AuthenticationManager authenticationManager;
 
@@ -187,7 +187,7 @@ public class H2OAuthenticationFilter extends GenericFilterBean {
   }
 
   private boolean postToAuthenticate(HttpServletRequest httpRequest, String tenant, String resourcePath) {
-    String endPointURL = SanjnanConstants.V6_AUTHENTICATE_URL.replace(SanjnanConstants.TENANT_PARAMETER_PATTERN, tenant);
+    String endPointURL = SanjnanConstants.V1_AUTHENTICATE_URL.replace(SanjnanConstants.TENANT_PARAMETER_PATTERN, tenant);
     return endPointURL.equalsIgnoreCase(resourcePath) && httpRequest.getMethod().equals("POST");
   }
 
@@ -211,7 +211,7 @@ public class H2OAuthenticationFilter extends GenericFilterBean {
                                                      Optional<String> username,
                                                      Optional<String> password) throws IOException, DatatypeConfigurationException {
 
-    Optional<Tenant> tenantOptional = getTenantService(request).findByDiscriminator(tenantDiscriminator.get());
+    Optional<Tenant> tenantOptional = getTenantService(request).getTenant(tenantDiscriminator.get());
     if (tenantOptional.isPresent()) {
 
       Tenant tenant =  tenantOptional.get();
@@ -297,32 +297,32 @@ public class H2OAuthenticationFilter extends GenericFilterBean {
       }
     }
   }
-  private AccountCacheService getAccountService(HttpServletRequest request) {
+  private AccountService getAccountService(HttpServletRequest request) {
 
     synchronized (this) {
 
-      if (accountCacheService == null) {
+      if (accountService == null) {
 
         ServletContext servletContext = request.getServletContext();
         WebApplicationContext webApplicationContext = WebApplicationContextUtils.getWebApplicationContext(servletContext);
-        accountCacheService =  webApplicationContext.getBean(AccountCacheService.class);
+        accountService =  webApplicationContext.getBean(AccountService.class);
       }
     }
-    return accountCacheService;
+    return accountService;
   }
 
-  private TenantCacheService getTenantService(HttpServletRequest request) {
+  private TenantService getTenantService(HttpServletRequest request) {
 
     synchronized (this) {
 
-      if (tenantCacheService == null) {
+      if (tenantService == null) {
 
         ServletContext servletContext = request.getServletContext();
         WebApplicationContext webApplicationContext = WebApplicationContextUtils.getWebApplicationContext(servletContext);
-        tenantCacheService =  webApplicationContext.getBean(TenantCacheService.class);
+        tenantService =  webApplicationContext.getBean(TenantService.class);
       }
     }
-    return tenantCacheService;
+    return tenantService;
   }
   private H2OTokenService getTokenService(HttpServletRequest request) {
 

@@ -8,11 +8,11 @@
 
 package com.sanjnan.rae.identityserver.security.provider;
 
-import com.sanjnan.rae.identityserver.caching.AccountCacheService;
-import com.sanjnan.rae.identityserver.caching.TenantCacheService;
 import com.sanjnan.rae.identityserver.pojos.Account;
 import com.sanjnan.rae.identityserver.pojos.Tenant;
 import com.sanjnan.rae.identityserver.security.token.H2OPrincipal;
+import com.sanjnan.rae.identityserver.services.AccountService;
+import com.sanjnan.rae.identityserver.services.TenantService;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -35,9 +35,9 @@ public class H2OUsernamePasswordAuthenticationProvider implements Authentication
     public static final String INVALID_BACKEND_ADMIN_CREDENTIALS = "Invalid Backend Admin Credentials";
     private final static Logger logger = Logger.getLogger(H2OUsernamePasswordAuthenticationProvider.class);
     @Autowired
-    private AccountCacheService accountCacheService;
+    private AccountService accountService;
     @Autowired
-    private TenantCacheService tenantCacheService;
+    private TenantService tenantService;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException
@@ -50,14 +50,14 @@ public class H2OUsernamePasswordAuthenticationProvider implements Authentication
 
         if (discriminator.isPresent() && username.isPresent() && password.isPresent()) {
 
-            Optional<Tenant> tenantOptional = tenantCacheService.findByDiscriminator(discriminator.get());
+            Optional<Tenant> tenantOptional = tenantService.getTenant(discriminator.get());
             if (tenantOptional.isPresent()) {
 
                 Tenant tenant = tenantOptional.get();
                 logger.info("tenant = " + tenant.getDiscriminator() + " username " + username.toString());
                 if (credentialsValid(tenant, username, password)) {
 
-                    Optional<Account> accountOptional = accountCacheService.findByName(tenant.getId(), username.get());
+                    Optional<Account> accountOptional = accountService.getAccount(tenant, username.get());
                     if (accountOptional.isPresent()) {
 
                         Account account = accountOptional.get();
@@ -84,7 +84,7 @@ public class H2OUsernamePasswordAuthenticationProvider implements Authentication
     }
 
     private boolean credentialsValid(Tenant tenant, Optional<String> username, Optional<String> password) {
-        return accountCacheService.validateCredentials(tenant, username.get(), password.get());
+        return accountService.validateCredentials(tenant, username.get(), password.get());
     }
 
     @Override

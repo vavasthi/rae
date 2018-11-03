@@ -22,8 +22,8 @@ import static io.restassured.RestAssured.given;
  */
 public class TestCaseBase {
 
-  protected static String authenticateUrl = "http://localhost:8080/v6/internal/authenticate";
-  protected static String baseUrl = "http://localhost:8080/v6/";
+  protected static String authenticateUrl = "http://localhost:8080/v1/internal/authenticate";
+  protected static String baseUrl = "http://localhost:8080/v1/";
   protected static String username = "Hubble";
   protected static String password = "Hobble";
   protected static String internalTenant = "internal";
@@ -87,6 +87,6 @@ public class TestCaseBase {
         header(SanjnanConstants.AUTH_TENANT_HEADER, internalTenant).
         header(SanjnanConstants.AUTH_TOKEN_TYPE_HEADER, "app_token").
         header(SanjnanConstants.AUTH_APPLICATION_ID_HEADER, "MyRestAssuredClient").
-        when().delete(SanjnanConstants.V6_SETUP_ENDPOINT).andReturn();*/
+        when().delete(SanjnanConstants.V1_SETUP_ENDPOINT).andReturn();*/
   }
 }
