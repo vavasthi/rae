@@ -19,6 +19,7 @@ public class H2OTokenResponse implements Serializable {
 
   @JsonProperty
   private String authToken;
+  private String refreshToken;
   private ComputeRegion computeRegion;
   @JsonSerialize(using = H2ODateTimeSerializer.class)
   @JsonDeserialize(using = H2ODateTimeDeserializer.class)
@@ -29,10 +30,12 @@ public class H2OTokenResponse implements Serializable {
   }
 
   public H2OTokenResponse(String authToken,
+                          String refreshToken,
                           ComputeRegion computeRegion,
                           DateTime expiry,
                           Collection<H2ORole> h2ORoles) throws DatatypeConfigurationException {
     this.authToken = authToken;
+    this.refreshToken = refreshToken;
     this.computeRegion = computeRegion;
     this.h2ORoles = h2ORoles;
     this.expiry = expiry;
@@ -46,6 +49,13 @@ public class H2OTokenResponse implements Serializable {
     this.authToken = authToken;
   }
 
+  public String getRefreshToken() {
+    return refreshToken;
+  }
+
+  public void setRefreshToken(String refreshToken) {
+    this.refreshToken = refreshToken;
+  }
 
   public DateTime getExpiry() {
     return expiry;

@@ -8,6 +8,7 @@
 
 package com.sanjnan.rae.identityserver.endpoints.v1;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sanjnan.rae.common.constants.SanjnanConstants;
 import com.sanjnan.rae.common.exception.MismatchedCredentialHeaderAndAuthException;
 import com.sanjnan.rae.identityserver.data.couchbase.AccountRepository;
@@ -16,7 +17,9 @@ import com.sanjnan.rae.identityserver.data.couchbase.TenantRepository;
 import com.sanjnan.rae.identityserver.pojos.*;
 import com.sanjnan.rae.identityserver.security.filters.SanjnanAuthenticationThreadLocal;
 import com.sanjnan.rae.identityserver.services.H2OTokenService;
+import com.sanjnan.rae.identityserver.utils.SanjnanMessages;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,6 +27,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import javax.xml.datatype.DatatypeConfigurationException;
 import java.util.*;
 
@@ -36,8 +40,6 @@ public class AuthenticationEndpoint extends BaseEndpoint {
   @Autowired
   private HttpServletRequest request;
   @Autowired
-  private HttpServletResponse response;
-  @Autowired
   private H2OTokenService tokenService;
   @Autowired
   private TenantRepository tenantRepository;
@@ -48,13 +50,24 @@ public class AuthenticationEndpoint extends BaseEndpoint {
 
   @Transactional
   @RequestMapping(value = SanjnanConstants.V1_AUTHENTICATE_URL, method = RequestMethod.POST)
-  public String authenticate(@PathVariable("tenant") String tenant) {
-    return "This is just for in-code-documentation purposes and Rest API reference documentation." +
-            "Servlet will never get to this point as Http requests are processed by AuthenticationFilter." +
-            "Nonetheless to authenticate Domain User POST request with X-Auth-Username and X-Auth-Password headers " +
-            "is mandatory to this URL. If username and password are correct valid token will be returned (just json string in response) " +
-            "This token must be present in X-Auth-Token header in all requests for all other URLs, including logout." +
-            "Authentication can be issued multiple times and each call results in new ticket.";
+  public H2OUsernameAndTokenResponse authenticate(@PathVariable("tenant") String discriminator,
+                                                  @RequestBody @Valid UsernameAndPassword usernameAndPassword) {
+
+    Tenant tenant = SanjnanAuthenticationThreadLocal.INSTANCE.getTenantThreadLocal().get();
+    Account account = SanjnanAuthenticationThreadLocal.INSTANCE.getAccountThreadLocal().get();
+    Session session = SanjnanAuthenticationThreadLocal.INSTANCE.getSessionThreadLocal().get();
+    try {
+
+      return new H2OUsernameAndTokenResponse(tenant.getDiscriminator(),
+              account.getName(),
+              new H2OTokenResponse(session.getAuthToken(),
+                      session.getRefreshToken(),
+                      account.getComputeRegion(),
+                      session.getExpiry(),
+                      account.getH2ORoles()));
+    } catch (DatatypeConfigurationException e) {
+      throw new BadCredentialsException(String.format(SanjnanMessages.BAD_CREDENTIALS, account.getName()));
+    }
   }
 
   @Transactional
@@ -66,7 +79,7 @@ public class AuthenticationEndpoint extends BaseEndpoint {
     Optional<String> token = getOptionalHeader(httpRequest, SanjnanConstants.AUTH_TOKEN_HEADER);
     Optional<String> tokenTypeStr = getOptionalHeader(httpRequest, SanjnanConstants.AUTH_TOKEN_TYPE_HEADER);
     Optional<String> remoteAddr = Optional.ofNullable(httpRequest.getRemoteAddr());
-    Optional<String> applicationId = getOptionalHeader(httpRequest, SanjnanConstants.AUTH_APPLICATION_ID_HEADER);
+    Optional<String> applicationId = getOptionalHeader(httpRequest, SanjnanConstants.AUTH_CLIENT_ID_HEADER);
     try {
 
       H2OUsernameAndTokenResponse utResponse
@@ -80,27 +93,21 @@ public class AuthenticationEndpoint extends BaseEndpoint {
       throw new MismatchedCredentialHeaderAndAuthException("Datatype configuration error.");
     }
   }
-  @Transactional
-  @RequestMapping(value = SanjnanConstants.V1_AUTHENTICATE_URL + "/validate", method = RequestMethod.POST)
-  public H2OTokenResponse validate(@PathVariable("tenant") String tenant) {
+  @RequestMapping(value = SanjnanConstants.V1_AUTHENTICATE_URL + "/validate", method = RequestMethod.GET, produces = "application/json")
+  public H2OTokenResponse validate(@PathVariable("tenant") String discriminator) {
 
-    HttpServletRequest httpRequest = asHttp(request);
-    Optional<String> tenantHeader = getOptionalHeader(httpRequest, SanjnanConstants.AUTH_TENANT_HEADER);
-    Optional<String> token = getOptionalHeader(httpRequest, SanjnanConstants.AUTH_TOKEN_HEADER);
-    Optional<String> tokenTypeStr = getOptionalHeader(httpRequest, SanjnanConstants.AUTH_TOKEN_TYPE_HEADER);
-    Optional<String> remoteAddr = Optional.ofNullable(httpRequest.getRemoteAddr());
-    Optional<String> applicationId = getOptionalHeader(httpRequest, SanjnanConstants.AUTH_APPLICATION_ID_HEADER);
+    Tenant tenant = SanjnanAuthenticationThreadLocal.INSTANCE.getTenantThreadLocal().get();
+    Account account = SanjnanAuthenticationThreadLocal.INSTANCE.getAccountThreadLocal().get();
+    Session session = SanjnanAuthenticationThreadLocal.INSTANCE.getSessionThreadLocal().get();
     try {
 
-      H2OUsernameAndTokenResponse utResponse
-              = tokenService.contains(tenantHeader.get(), remoteAddr.get(), applicationId.get(), token.get());
-      H2OTokenResponse tokenResponse
-              = utResponse.getResponse();
-
-      return tokenResponse;
-    }
-    catch(DatatypeConfigurationException ex) {
-      throw new MismatchedCredentialHeaderAndAuthException("Datatype configuration error.");
+      return new H2OTokenResponse(session.getAuthToken(),
+                      session.getRefreshToken(),
+                      account.getComputeRegion(),
+                      session.getExpiry(),
+                      account.getH2ORoles());
+    } catch (DatatypeConfigurationException e) {
+      throw new BadCredentialsException(String.format(SanjnanMessages.BAD_CREDENTIALS, account.getName()));
     }
   }
 
@@ -113,14 +120,14 @@ public class AuthenticationEndpoint extends BaseEndpoint {
     Optional<String> token = getOptionalHeader(httpRequest, SanjnanConstants.AUTH_TOKEN_HEADER);
     Optional<String> tokenTypeStr = getOptionalHeader(httpRequest, SanjnanConstants.AUTH_TOKEN_TYPE_HEADER);
     Optional<String> remoteAddr = Optional.ofNullable(httpRequest.getRemoteAddr());
-    Optional<String> applicationId = getOptionalHeader(httpRequest, SanjnanConstants.AUTH_APPLICATION_ID_HEADER);
+    Optional<String> applicationId = getOptionalHeader(httpRequest, SanjnanConstants.AUTH_CLIENT_ID_HEADER);
     List<H2OTokenResponse> responses = new ArrayList<>();
     try {
 
       Account account = SanjnanAuthenticationThreadLocal.INSTANCE.getAccountThreadLocal().get();
-      List<UUID> sessions = new ArrayList<>();
+      List<String> sessions = new ArrayList<>();
       account.getSessionMap().values().stream().forEach(e -> sessions.add(e));
-      for (UUID sid : sessions) {
+      for (String sid : sessions) {
 
         Optional<Session> sessionOptional = sessionRepository.findById(sid);
         if (sessionOptional.isPresent()) {

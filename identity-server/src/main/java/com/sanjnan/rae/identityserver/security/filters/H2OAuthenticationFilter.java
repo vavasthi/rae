@@ -1,10 +1,3 @@
-/*
- * Copyright 2016 (c) Hubble Connected (HKT) Ltd. - All Rights Reserved
- *
- * Proprietary and confidential.
- *
- * Unauthorized copying of this file, via any medium is strictly prohibited.
- */
 
 package com.sanjnan.rae.identityserver.security.filters;
 
@@ -27,7 +20,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.codec.Base64;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -39,6 +31,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.datatype.DatatypeConfigurationException;
 import java.io.IOException;
+import java.util.Base64;
 import java.util.Optional;
 
 /**
@@ -46,8 +39,6 @@ import java.util.Optional;
  */
 public class H2OAuthenticationFilter extends GenericFilterBean {
 
-  public static final String TOKEN_SESSION_KEY = "token";
-  public static final String USER_SESSION_KEY = "user";
   private final static Logger logger = Logger.getLogger(H2OAuthenticationFilter.class);
   private AccountService accountService = null;
   private TenantService tenantService = null;
@@ -81,14 +72,14 @@ public class H2OAuthenticationFilter extends GenericFilterBean {
     Optional<String> token = getOptionalHeader(httpRequest, SanjnanConstants.AUTH_TOKEN_HEADER);
     Optional<String> basicAuth = getOptionalHeader(httpRequest, SanjnanConstants.AUTH_AUTHORIZATION_HEADER);
     Optional<String> remoteAddr = Optional.ofNullable(httpRequest.getRemoteAddr());
-    Optional<String> applicationId = getOptionalHeader(httpRequest, SanjnanConstants.AUTH_APPLICATION_ID_HEADER);
-    if(!applicationId.isPresent()) {
+    Optional<String> clientId = getOptionalHeader(httpRequest, SanjnanConstants.AUTH_CLIENT_ID_HEADER);
+    if(!clientId.isPresent()) {
 
       throw new MismatchedCredentialHeaderAndAuthException("Application Id is not provided as header for authentication.");
     }
     if (basicAuth.isPresent()) {
 
-      String basicAuthValue = new String(Base64.decode(basicAuth.get().substring("Basic ".length()).getBytes()));
+      String basicAuthValue = new String(Base64.getDecoder().decode(basicAuth.get().substring("Basic ".length()).getBytes()));
       String[] basicAuthPair = basicAuthValue.split(":", 2);
       if (username.isPresent() && password.isPresent()) {
         if (basicAuth.isPresent() && basicAuth.get() != null && !basicAuth.get().isEmpty()) {
@@ -137,29 +128,19 @@ public class H2OAuthenticationFilter extends GenericFilterBean {
     try {
       if (!tokenBasedAuthentication && postToAuthenticate(httpRequest, tenant.get(), resourcePath)) {
         logger.log(Level.INFO,
-                String.format("Trying to authenticate user {} by X-Auth-Username method", username));
+                String.format("Trying to authenticate user {%s} by X-Auth-Username method", username));
         processUsernamePasswordAuthentication(httpRequest,
                 httpResponse,
                 remoteAddr,
-                applicationId,
+                clientId,
                 tenant,
                 username,
                 password);
-        return;
       }
-
-      if (tokenBasedAuthentication) {
+      else if (tokenBasedAuthentication) {
         logger.log(Level.INFO,
-                String.format("Trying to authenticate user by X-Auth-Token method. Token: {}", token));
-        H2OUsernameAndTokenResponse utResponse
-                = getTokenService(httpRequest).
-                contains(tenant.get(), remoteAddr.get(), applicationId.get(), token.get());
-        H2OTokenResponse tokenResponse
-                = utResponse.getResponse();
-        if (tokenResponse != null) {
-
-          processTokenAuthentication(remoteAddr, applicationId, tenant, utResponse.getUsername(), token);
-        }
+                String.format("Trying to authenticate user by X-Auth-Token method. Token: {%s}", token));
+          processTokenAuthentication(remoteAddr, clientId, tenant, token);
       }
 
       logger.debug("AuthenticationFilter is passing request down the filter chain");
@@ -174,7 +155,10 @@ public class H2OAuthenticationFilter extends GenericFilterBean {
     } catch (DatatypeConfigurationException e) {
       SecurityContextHolder.clearContext();
       httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
-    } finally {
+    } catch(Exception e) {
+      e.printStackTrace();
+    }
+    finally {
     }
   }
 
@@ -206,7 +190,7 @@ public class H2OAuthenticationFilter extends GenericFilterBean {
   private void processUsernamePasswordAuthentication(HttpServletRequest request,
                                                      HttpServletResponse httpResponse,
                                                      Optional<String> remoteAddr,
-                                                     Optional<String> applicationId,
+                                                     Optional<String> clientId,
                                                      Optional<String> tenantDiscriminator,
                                                      Optional<String> username,
                                                      Optional<String> password) throws IOException, DatatypeConfigurationException {
@@ -216,55 +200,42 @@ public class H2OAuthenticationFilter extends GenericFilterBean {
 
       Tenant tenant =  tenantOptional.get();
       Authentication resultOfAuthentication
-              = tryToAuthenticateWithUsernameAndPassword(remoteAddr, applicationId, tenantDiscriminator, username, password);
+              = tryToAuthenticateWithUsernameAndPassword(remoteAddr, clientId, tenantDiscriminator, username, password);
       SecurityContextHolder.getContext().setAuthentication(resultOfAuthentication);
-      httpResponse.setStatus(HttpServletResponse.SC_OK);
-      H2OTokenResponse tokenResponse
-              = getTokenService(request).create(tenant.getDiscriminator(),
-              remoteAddr.get(),
-              applicationId.get(),
-              username.get(),
-              password.get()).getResponse();
-      String tokenJsonResponse = new ObjectMapper().writeValueAsString(tokenResponse);
-      httpResponse.addHeader("Content-Type", "application/json");
-      httpResponse.getWriter().print(tokenJsonResponse);
     }
   }
 
   private Authentication tryToAuthenticateWithUsernameAndPassword(Optional<String> remoteAddr,
-                                                                  Optional<String> applicationId,
+                                                                  Optional<String> clientId,
                                                                   Optional<String> tenant,
                                                                   Optional<String> username,
                                                                   Optional<String> password) {
     UsernamePasswordAuthenticationToken requestAuthentication
-            = new UsernamePasswordAuthenticationToken(new H2OPrincipal(remoteAddr, applicationId, tenant, username), password);
+            = new UsernamePasswordAuthenticationToken(new H2OPrincipal(remoteAddr, clientId, tenant, username), password);
     return tryToAuthenticate(requestAuthentication);
   }
 
   private void processTokenAuthentication(Optional<String> remoteAddr,
-                                          Optional<String> applicationId,
+                                          Optional<String> clientId,
                                           Optional<String> tenant,
-                                          String username,
                                           Optional<String> token) {
 
     Authentication resultOfAuthentication = tryToAuthenticateWithToken(remoteAddr,
-            applicationId,
+            clientId,
             tenant,
-            username,
             token);
     SecurityContextHolder.getContext().setAuthentication(resultOfAuthentication);
   }
 
   private Authentication tryToAuthenticateWithToken(Optional<String> remoteAddr,
-                                                    Optional<String> applicationId,
+                                                    Optional<String> clientId,
                                                     Optional<String> tenant,
-                                                    String username,
                                                     Optional<String> token) {
     PreAuthenticatedAuthenticationToken requestAuthentication
             = new PreAuthenticatedAuthenticationToken(new H2OTokenPrincipal(remoteAddr,
-            applicationId,
+            clientId,
             tenant,
-            username,
+            token.get(),
             token), null);
     return tryToAuthenticate(requestAuthentication);
   }

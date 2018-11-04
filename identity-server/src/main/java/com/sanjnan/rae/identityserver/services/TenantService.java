@@ -35,7 +35,7 @@ public class TenantService {
     return tenantList;
   }
   public Tenant getTenant(UUID id) {
-    Optional<Tenant> tenantOptional = tenantRepository.findById(id);
+    Optional<Tenant> tenantOptional = tenantRepository.findById(id.toString());
     if (tenantOptional.isPresent()) {
       Tenant tenant = tenantOptional.get();
       return tenant;
@@ -53,7 +53,7 @@ public class TenantService {
       throw new EntityAlreadyExistsException(String.format(SanjnanMessages.TENANT_ALREADY_EXISTS, tenant.getDiscriminator()));
     }
     if (tenant.getId() == null) {
-      tenant.setId(UUID.randomUUID());
+      tenant.setId(UUID.randomUUID().toString());
     }
     tenantRepository.save(tenant);
     return tenant;
@@ -61,7 +61,7 @@ public class TenantService {
 
   public Tenant updateTenant(UUID id, Tenant tenant) throws InvocationTargetException, IllegalAccessException {
 
-    Optional<Tenant> tenantOptional = tenantRepository.findById(id);
+    Optional<Tenant> tenantOptional = tenantRepository.findById(id.toString());
     if (tenantOptional.isPresent()) {
 
       Tenant storedTenant = tenantOptional.get();

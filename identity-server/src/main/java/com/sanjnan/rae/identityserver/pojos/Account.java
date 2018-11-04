@@ -1,13 +1,11 @@
 package com.sanjnan.rae.identityserver.pojos;
 
+import com.couchbase.client.java.repository.annotation.Field;
 import com.sanjnan.rae.common.annotations.SkipPatching;
 import org.joda.time.DateTime;
 import org.springframework.data.couchbase.core.mapping.Document;
 
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Created by vinay on 1/28/16.
@@ -15,16 +13,16 @@ import java.util.UUID;
 @Document
 public class Account extends Base {
   public Account() {
-    super(UUID.randomUUID(), DateTime.now(), DateTime.now(),null, null, "");
+    super(UUID.randomUUID().toString(), DateTime.now(), DateTime.now(),null, null, "");
     setCreatedBy(getId());
     setCreatedBy(getId());
   }
 
-  public UUID getTenantId() {
+  public String getTenantId() {
     return tenantId;
   }
 
-  public void setTenantId(UUID tenantId) {
+  public void setTenantId(String tenantId) {
     this.tenantId = tenantId;
   }
 
@@ -61,11 +59,11 @@ public class Account extends Base {
     this.remoteAddresses = remoteAddresses;
   }
 
-  public Map<String, UUID> getSessionMap() {
+  public Map<String, String> getSessionMap() {
     return sessionMap;
   }
 
-  public void setSessionMap(Map<String, UUID> sessionMap) {
+  public void setSessionMap(Map<String, String> sessionMap) {
     this.sessionMap = sessionMap;
   }
 
@@ -106,11 +104,12 @@ public class Account extends Base {
         "} " + super.toString();
   }
 
-  private UUID tenantId;
+  @Field()
+  private String tenantId;
   private String email;
   private String password;
-  private Set<H2ORole> h2ORoles;
-  private Set<String> remoteAddresses;
-  private Map<String, UUID> sessionMap;
+  private Set<H2ORole> h2ORoles = new HashSet<>();
+  private Set<String> remoteAddresses = new HashSet<>();
+  private Map<String, String> sessionMap = new HashMap<>();
   private ComputeRegion computeRegion;
 }

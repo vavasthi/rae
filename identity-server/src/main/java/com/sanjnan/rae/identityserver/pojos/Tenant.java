@@ -17,8 +17,8 @@ public class Tenant extends Base {
   public Tenant() {
   }
 
-  public Tenant(UUID createdBy, UUID updatedBy, String name, String email, String discriminator) {
-    super(UUID.randomUUID(), DateTime.now(), DateTime.now(), createdBy, updatedBy, name);
+  public Tenant(String createdBy, String updatedBy, String name, String email, String discriminator) {
+    super(UUID.randomUUID().toString(), DateTime.now(), DateTime.now(), createdBy, updatedBy, name);
     this.email = email;
     this.discriminator = discriminator;
     this.computeRegions = new ArrayList<>();

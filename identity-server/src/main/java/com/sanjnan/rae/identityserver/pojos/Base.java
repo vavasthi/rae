@@ -31,7 +31,7 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include;
  */
 @JsonInclude(Include.NON_NULL)
 public class Base implements Serializable {
-  public Base(UUID id, DateTime createdAt, DateTime updatedAt, UUID createdBy, UUID updatedBy, String name) {
+  public Base(String id, DateTime createdAt, DateTime updatedAt, String createdBy, String updatedBy, String name) {
     this.id = id;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
@@ -41,7 +41,7 @@ public class Base implements Serializable {
   }
 
   public Base() {
-    this.id = UUID.randomUUID();
+    this.id = UUID.randomUUID().toString();
     this.createdAt = DateTime.now();
     this.updatedAt = DateTime.now();
   }
@@ -51,11 +51,11 @@ public class Base implements Serializable {
   }
 
   @SkipPatching
-  public UUID getId() {
+  public String getId() {
     return id;
   }
 
-  public void setId(UUID id) {
+  public void setId(String id) {
     this.id = id;
   }
 
@@ -75,19 +75,19 @@ public class Base implements Serializable {
     this.updatedAt = updatedAt;
   }
 
-  public UUID getCreatedBy() {
+  public String getCreatedBy() {
     return createdBy;
   }
 
-  public void setCreatedBy(UUID createdBy) {
+  public void setCreatedBy(String createdBy) {
     this.createdBy = createdBy;
   }
 
-  public UUID getUpdatedBy() {
+  public String getUpdatedBy() {
     return updatedBy;
   }
 
-  public void setUpdatedBy(UUID updatedBy) {
+  public void setUpdatedBy(String updatedBy) {
     this.updatedBy = updatedBy;
   }
 
@@ -131,7 +131,7 @@ public class Base implements Serializable {
   }
 
   @Id
-  private UUID id;
+  private String id;
   @JsonSerialize(using = H2ODateTimeSerializer.class)
   @JsonDeserialize(using = H2ODateTimeDeserializer.class)
   @Field
@@ -141,8 +141,8 @@ public class Base implements Serializable {
   @Field
   private DateTime updatedAt;
   @Field
-  private UUID createdBy;
+  private String createdBy;
   @Field
-  private UUID updatedBy;
+  private String updatedBy;
   private @H2ONonNullString(min = 5, max = 255, nullAllowed = false) String name;
 }

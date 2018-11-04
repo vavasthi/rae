@@ -71,7 +71,7 @@ public class TestCaseBase {
             header(SanjnanConstants.AUTH_PASSWORD_HEADER, password).
             header(SanjnanConstants.AUTH_TENANT_HEADER, internalTenant).
             header(SanjnanConstants.AUTH_TOKEN_TYPE_HEADER, "app_token").
-            header(SanjnanConstants.AUTH_APPLICATION_ID_HEADER, "MyRestAssuredClient").
+            header(SanjnanConstants.AUTH_CLIENT_ID_HEADER, "MyRestAssuredClient").
         when().post(authenticateUrl).body().as(H2OTokenResponse.class);
 
     logger.log(Level.INFO, String.format("Authenticating %s, received response %s", username, authResponse));
@@ -86,7 +86,7 @@ public class TestCaseBase {
         header(SanjnanConstants.AUTH_PASSWORD_HEADER, password).
         header(SanjnanConstants.AUTH_TENANT_HEADER, internalTenant).
         header(SanjnanConstants.AUTH_TOKEN_TYPE_HEADER, "app_token").
-        header(SanjnanConstants.AUTH_APPLICATION_ID_HEADER, "MyRestAssuredClient").
+        header(SanjnanConstants.AUTH_CLIENT_ID_HEADER, "MyRestAssuredClient").
         when().delete(SanjnanConstants.V1_SETUP_ENDPOINT).andReturn();*/
   }
 }

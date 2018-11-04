@@ -18,6 +18,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.xml.crypto.Data;
 import javax.xml.datatype.DatatypeConfigurationException;
 import java.util.Optional;
 import java.util.Set;
@@ -59,39 +60,49 @@ public class H2OTokenService  {
 
     return validateAppToken(tenantDiscriminator, remoteAddr, applicationId, authToken);
   }
-  public H2OUsernameAndTokenResponse create(String tenantDiscriminator,
-                                            String remoteAddr,
-                                            String applicationId,
-                                            String username,
-                                            String password)
-          throws DatatypeConfigurationException {
+  public Session create(String tenantDiscriminator,
+                        String remoteAddr,
+                        String clientIdId,
+                        String username,
+                        String password) {
 
     Optional<Tenant> tenantOptional = tenantRepository.findByDiscriminator(tenantDiscriminator);
-    if (tenantOptional.isPresent()) {
+    try {
 
-      Tenant tenant = tenantOptional.get();
-      Optional<Account> accountOptional = accountRepository.findAccountByTenantIdAndAndName(tenant.getId(), username);
-      if (accountOptional.isPresent()) {
+      if (tenantOptional.isPresent()) {
 
-        Account account = accountOptional.get();
-        if (H2OPasswordEncryptionManager.INSTANCE.matches(password, account.getPassword())) {
+        Tenant tenant = tenantOptional.get();
+        Optional<Account> accountOptional = accountRepository.findAccountsByTenantIdAndName(tenant.getId(), username);
+        if (accountOptional.isPresent()) {
 
-          UUID sessionId = account.getSessionMap().get(applicationId);
-          if (sessionId != null) {
-            Optional<Session> sessionOptional = sessionRepository.findById(sessionId);
-            if (sessionOptional.isPresent()) {
-              Session session = sessionOptional.get();
-              deleteToken(tenant, account, session);
-              accountOptional = accountRepository.findById(account.getId());
-              account = accountOptional.get();
+          Account account = accountOptional.get();
+          if (H2OPasswordEncryptionManager.INSTANCE.matches(password, account.getPassword())) {
+
+            String sessionId = account.getSessionMap().get(clientIdId);
+            if (sessionId != null) {
+              Optional<Session> sessionOptional = sessionRepository.findById(sessionId);
+              if (sessionOptional.isPresent()) {
+                Session session = sessionOptional.get();
+                deleteToken(tenant, account, session);
+                accountOptional = accountRepository.findById(account.getId());
+                account = accountOptional.get();
+              }
             }
+            Session session = assignAuthTokenToUser(tenant, account, remoteAddr, clientIdId);
+            SanjnanAuthenticationThreadLocal.INSTANCE.initializeThreadLocals(tenant, account, session);
+            account.getRemoteAddresses().add(remoteAddr);
+            accountRepository.save(account);
+            return session;
           }
-          assignAuthTokenToUser(tenant, account, remoteAddr, applicationId);
-        }
-        else {
-          throw new BadCredentialsException(String.format("%s is not authorized. Credentials mismatch", username));
+          else {
+            throw new BadCredentialsException(String.format("%s is not authorized. Credentials mismatch", username));
+          }
         }
       }
+    }
+    catch(DatatypeConfigurationException dce) {
+
+      throw new BadCredentialsException(remoteAddr, dce);
     }
     throw new BadCredentialsException(remoteAddr);
   }
@@ -134,7 +145,7 @@ public class H2OTokenService  {
 
           Account account = accountOptional.get();
 
-          if (session.getApplicationId().equals(applicationId)) {
+          if (session.getClientId().equals(applicationId)) {
             if (session.getExpiry().isBefore(new DateTime())) {
 
               throw new TokenExpiredException(HttpStatus.UNAUTHORIZED_401, authToken + " is expired.");
@@ -148,6 +159,7 @@ public class H2OTokenService  {
             return new H2OUsernameAndTokenResponse(tenantDiscriminator,
                     account.getName(),
                     new H2OTokenResponse(authToken,
+                            "",
                             account.getComputeRegion(),
                             session.getExpiry(),
                             account.getH2ORoles()));
@@ -175,10 +187,17 @@ public class H2OTokenService  {
 
         Session session = sessionOptional.get();
         Optional<Account> accountOptional = accountRepository.findById(session.getAccountId());
-
         if (accountOptional.isPresent()) {
           Account account = accountOptional.get();
-          return assignAuthTokenToUser(tenant, account, session, account.getName());
+          /** If the user is coming in from an unknown IP address and refresh is called, disallow it and force the user
+           * to login using username and password.
+           */
+          if (!account.getRemoteAddresses().contains(remoteAddr)) {
+            throw new UnrecoganizedRemoteIPAddressException(remoteAddr);
+          }
+          H2OUsernameAndTokenResponse response =  assignAuthTokenToUser(tenant, account, session, account.getName());
+          SanjnanAuthenticationThreadLocal.INSTANCE.initializeThreadLocals(tenant, account, session);
+          return response;
         }
         else {
 
@@ -189,34 +208,27 @@ public class H2OTokenService  {
     }
     throw new BadCredentialsException(tenantDiscriminator + "/" + remoteAddr);
   }
-  public H2OUsernameAndTokenResponse assignAuthTokenToUser(Tenant tenant,
-                                                           Account account,
-                                                           String remoteAddr,
-                                                           String applicationId)
+  public Session assignAuthTokenToUser(Tenant tenant,
+                                       Account account,
+                                       String remoteAddr,
+                                       String applicationId)
           throws DatatypeConfigurationException {
-    if (!account.getRemoteAddresses().contains(remoteAddr)) {
-      throw new UnrecoganizedRemoteIPAddressException(remoteAddr);
-    }
-    UUID sessionId = account.getSessionMap().get(applicationId);
+    String sessionId = account.getSessionMap().get(applicationId);
     if (sessionId != null) {
       Optional<Session> sessionOptional = sessionRepository.findById(sessionId);
       if (sessionOptional.isPresent()) {
-        return assignAuthTokenToUser(tenant, account, sessionOptional.get(), account.getName());
+        assignAuthTokenToUser(tenant, account, sessionOptional.get(), account.getName());
+        return sessionOptional.get();
       }
     }
     DateTime expiry = DateTime.now();
-    expiry.plusSeconds(new Long(SanjnanConstants.ONE_DAY).intValue());
+    expiry = expiry.plusSeconds(SanjnanConstants.TOKEN_EXPIRY_SECONDS);
     Session session
-            = new Session(tenant.getId(), account, generateAuthToken(tenant, account.getName()), remoteAddr, applicationId, expiry, Session.SESSION_TYPE.APPLICATION_SESSION);
-    account.getSessionMap().put(applicationId, session.getId());
+            = new Session(tenant.getId().toString(), account, generateAuthToken(tenant, account.getName()), generateAuthToken(tenant, account.getName()), remoteAddr, applicationId, expiry, Session.SESSION_TYPE.APPLICATION_SESSION);
+    account.getSessionMap().put(applicationId, session.getId().toString());
     accountRepository.save(account);
     sessionRepository.save(session);
-    return new H2OUsernameAndTokenResponse(tenant.getDiscriminator(),
-            account.getName(),
-            new H2OTokenResponse(session.getAuthToken(),
-                    account.getComputeRegion(),
-                    session.getExpiry(),
-                    account.getH2ORoles()));
+    return session;
   }
   /**
    * This method generates an auth token for user and returns it. This method is called when a user performs authentication
@@ -235,10 +247,13 @@ public class H2OTokenService  {
 
     String authToken = generateAuthToken(tenant, account.getName());
     session.setAuthToken(authToken);
+    authToken = generateAuthToken(tenant, account.getName());
+    session.setRefreshToken(authToken);
     sessionRepository.save(session);
     return new H2OUsernameAndTokenResponse(tenant.getDiscriminator(),
             username,
             new H2OTokenResponse(session.getAuthToken(),
+                    session.getRefreshToken(),
                     account.getComputeRegion(),
                     session.getExpiry(),
                     account.getH2ORoles()));
@@ -248,13 +263,14 @@ public class H2OTokenService  {
                                                  Session session)
           throws DatatypeConfigurationException {
 
-    account.getSessionMap().remove(session.getApplicationId());
+    account.getSessionMap().remove(session.getClientId());
     accountRepository.save(account);
     sessionRepository.delete(session);
     SanjnanAuthenticationThreadLocal.INSTANCE.clear();
     return new H2OUsernameAndTokenResponse(tenant.getDiscriminator(),
             account.getName(),
             new H2OTokenResponse("",
+                    "",
                     null,
                     new DateTime(),
                     account.getH2ORoles()));

@@ -9,9 +9,11 @@
 package com.sanjnan.rae.identityserver.security.provider;
 
 import com.sanjnan.rae.identityserver.pojos.Account;
+import com.sanjnan.rae.identityserver.pojos.Session;
 import com.sanjnan.rae.identityserver.pojos.Tenant;
 import com.sanjnan.rae.identityserver.security.token.H2OPrincipal;
 import com.sanjnan.rae.identityserver.services.AccountService;
+import com.sanjnan.rae.identityserver.services.H2OTokenService;
 import com.sanjnan.rae.identityserver.services.TenantService;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 
+import javax.xml.datatype.DatatypeConfigurationException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -38,6 +41,9 @@ public class H2OUsernamePasswordAuthenticationProvider implements Authentication
     private AccountService accountService;
     @Autowired
     private TenantService tenantService;
+    @Autowired
+    private H2OTokenService tokenService;
+
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException
@@ -46,7 +52,8 @@ public class H2OUsernamePasswordAuthenticationProvider implements Authentication
         Optional<String> remoteAddr = principal.getRemoteAddr();
         Optional<String> discriminator = principal.getTenant();
         Optional<String> username = principal.getOptionalName();
-        Optional<String> password = Optional.of((String) authentication.getCredentials());
+        Optional<String> clientId = principal.getApplicationId();
+        Optional<String> password = (Optional<String>) authentication.getCredentials();
 
         if (discriminator.isPresent() && username.isPresent() && password.isPresent()) {
 
@@ -63,6 +70,7 @@ public class H2OUsernamePasswordAuthenticationProvider implements Authentication
                         Account account = accountOptional.get();
                         List<GrantedAuthority> grantedAuthorityList = new ArrayList<>();
                         account.getH2ORoles().forEach(e -> grantedAuthorityList.add(e));
+                        Session session = tokenService.create(discriminator.get(), remoteAddr.get(), clientId.get(), username.get(), password.get());
                         Authentication auth
                                 = new UsernamePasswordAuthenticationToken(new H2OPrincipal(remoteAddr,
                                 principal.getApplicationId(),

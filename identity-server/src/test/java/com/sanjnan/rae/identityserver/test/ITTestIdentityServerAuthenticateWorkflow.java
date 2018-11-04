@@ -37,7 +37,7 @@ public class ITTestIdentityServerAuthenticateWorkflow extends TestCaseBase {
             header(SanjnanConstants.AUTH_PASSWORD_HEADER, password).
             header(SanjnanConstants.AUTH_TENANT_HEADER, internalTenant).
             header(SanjnanConstants.AUTH_TOKEN_TYPE_HEADER, "app_token").
-            header(SanjnanConstants.AUTH_APPLICATION_ID_HEADER, "MyRestAssuredClient").
+            header(SanjnanConstants.AUTH_CLIENT_ID_HEADER, "MyRestAssuredClient").
         when().post(authenticateUrl).body().as(H2OTokenResponse.class);
     logger.log(Level.INFO, String.format("Authenticating %s, received response %s", username, authResponse));
   }
@@ -51,7 +51,7 @@ public class ITTestIdentityServerAuthenticateWorkflow extends TestCaseBase {
             header(SanjnanConstants.AUTH_TENANT_HEADER, internalTenant).
             header(SanjnanConstants.AUTH_TOKEN_HEADER, authResponse.getAuthToken()).
             header(SanjnanConstants.AUTH_TOKEN_TYPE_HEADER, "app_token").
-            header(SanjnanConstants.AUTH_APPLICATION_ID_HEADER, "MyRestAssuredClient").
+            header(SanjnanConstants.AUTH_CLIENT_ID_HEADER, "MyRestAssuredClient").
         when().post(authenticateUrl + "/validate").andReturn();
     logger.log(Level.INFO, "Authenticating using token.\n" + r.prettyPrint());
     assertEquals(r.getStatusCode(), HttpStatus.OK_200);

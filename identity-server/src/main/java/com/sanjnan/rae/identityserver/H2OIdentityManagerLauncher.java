@@ -36,7 +36,6 @@ import java.util.logging.Logger;
 @SpringBootApplication(scanBasePackages = {"com.sanjnan.rae.identityserver"},
         exclude = {DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
 @Configuration
-@EnableTransactionManagement
 //@EnableSwagger2
 public class H2OIdentityManagerLauncher  extends SpringBootServletInitializer {
 

@@ -34,11 +34,11 @@ public class AccountService {
 
         UUID id = UUID.fromString(id_or_name);
         logger.log(Level.INFO, "Retrieving account info for UUID = " + id_or_name);
-        return accountRepository.findById(id);
+        return accountRepository.findById(id.toString());
       }
       catch(IllegalArgumentException iae) {
         logger.log(Level.INFO, "Retrieving account info for username = " + id_or_name);
-        return accountRepository.findAccountByTenantIdAndAndName(tenant.getId(), id_or_name);
+        return accountRepository.findAccountsByTenantIdAndName(tenant.getId().toString(), id_or_name);
       }
   }
 
@@ -50,11 +50,11 @@ public class AccountService {
 
         UUID id = UUID.fromString(id_or_name);
         logger.log(Level.INFO, "Retrieving account info for UUID = " + id_or_name);
-        return accountRepository.findById(id);
+        return accountRepository.findById(id.toString());
       }
       catch(IllegalArgumentException iae) {
         logger.log(Level.INFO, "Retrieving account info for username = " + id_or_name);
-        return accountRepository.findAccountByTenantIdAndAndName(tenant.getId(), id_or_name);
+        return accountRepository.findAccountsByTenantIdAndName(tenant.getId().toString(), id_or_name);
       }
     }
     throw new EntityNotFoundException(String.format(SanjnanMessages.TENANT_NOT_FOUND, tenantDiscriminator));
@@ -67,7 +67,7 @@ public class AccountService {
 
       Tenant tenant = tenantOptional.get();
       if (account.getId() == null) {
-        account.setId(UUID.randomUUID());
+        account.setId(UUID.randomUUID().toString());
       }
       if (account.getTenantId() == null) {
         account.setTenantId(tenant.getId());
@@ -86,7 +86,7 @@ public class AccountService {
     if (tenantOptional.isPresent()) {
 
       Tenant tenant = tenantOptional.get();
-      Optional<Account> accountOptional = accountRepository.findById(id);
+      Optional<Account> accountOptional = accountRepository.findById(id.toString());
       if (accountOptional.isPresent()) {
         Account storedAccount = accountOptional.get();
         if (storedAccount.getTenantId().equals(tenant.getId())) {
@@ -108,12 +108,12 @@ public class AccountService {
     if (tenantOptional.isPresent()) {
 
       Tenant tenant = tenantOptional.get();
-      Optional<Account> accountOptional = accountRepository.findById(id);
+      Optional<Account> accountOptional = accountRepository.findById(id.toString());
       if (accountOptional.isPresent()) {
         Account storedAccount = accountOptional.get();
         if (storedAccount.getTenantId().equals(tenant.getId())) {
 
-          accountRepository.deleteById(id);
+          accountRepository.deleteById(id.toString());
         }
         else {
           throw new TenantMismatchException(String.format(SanjnanMessages.TENANT_MISMATCH, storedAccount.getName(), tenant.getDiscriminator()));

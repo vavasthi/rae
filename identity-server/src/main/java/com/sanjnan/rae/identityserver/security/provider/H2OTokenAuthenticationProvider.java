@@ -50,7 +50,7 @@ public class H2OTokenAuthenticationProvider implements AuthenticationProvider {
 
         response.getH2ORoles().forEach(e -> grantedAuthorityList.add(e));
       }
-      return new PreAuthenticatedAuthenticationToken(principal, null, grantedAuthorityList);
+      return new PreAuthenticatedAuthenticationToken(principal, response.getAuthToken(), grantedAuthorityList);
     }
     throw new BadCredentialsException("Invalid token or token expired");
   }

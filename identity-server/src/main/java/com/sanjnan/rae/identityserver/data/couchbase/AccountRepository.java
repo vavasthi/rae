@@ -12,6 +12,7 @@ package com.sanjnan.rae.identityserver.data.couchbase;
 
 import com.sanjnan.rae.identityserver.pojos.Account;
 import org.springframework.data.couchbase.core.query.N1qlPrimaryIndexed;
+import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.View;
 import org.springframework.data.couchbase.core.query.ViewIndexed;
 import org.springframework.data.repository.CrudRepository;
@@ -24,7 +25,7 @@ import java.util.UUID;
  */
 @N1qlPrimaryIndexed
 @ViewIndexed(designDoc = "account")
-public interface AccountRepository extends CrudRepository<Account, UUID> {
-    @View(designDocument = "account", viewName = "byTenantIdAndName")
-    Optional<Account> findAccountByTenantIdAndAndName(UUID tenantId, String name);
+public interface AccountRepository extends CrudRepository<Account, String> {
+    @Query("#{#n1ql.selectEntity} WHERE tenantId == $1 AND name == $2")
+    Optional<Account> findAccountsByTenantIdAndName(String tenantId, String name);
 }

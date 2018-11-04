@@ -26,9 +26,8 @@ import java.util.UUID;
  */
 @N1qlPrimaryIndexed
 @ViewIndexed(designDoc = "tenant")
-public interface TenantRepository extends CrudRepository<Tenant, UUID> {
+public interface TenantRepository extends CrudRepository<Tenant, String> {
 
-  @View(designDocument = "tenant", viewName = "byDiscriminator")
   Optional<Tenant> findByDiscriminator(String discriminator);
 
 }

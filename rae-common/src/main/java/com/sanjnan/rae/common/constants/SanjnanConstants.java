@@ -343,9 +343,9 @@ public class SanjnanConstants {
    */
   public static final String AUTH_AUTHORIZATION_HEADER = "Authorization";
   /**
-   * The constant AUTH_APPLICATION_ID_HEADER.
+   * The constant AUTH_CLIENT_ID_HEADER.
    */
-  public static final String AUTH_APPLICATION_ID_HEADER = "X-Application-Id";
+  public static final String AUTH_CLIENT_ID_HEADER = "X-Client-Id";
   /**
    * The constant TENANT_PARAMETER_PATTERN.
    */
@@ -1837,6 +1837,9 @@ public class SanjnanConstants {
    *
    */
   public static final long ONE_DAY = 24 * 60 * 60 * 1000;
+
+  public static final int TOKEN_EXPIRY_SECONDS = 24 * 60 * 60;
+
   public static final int S3_DELETE_RULE_BUFFER_DAYS = 1;
   /**
    * The constant MODEL_ALCATEL.

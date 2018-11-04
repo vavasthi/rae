@@ -25,9 +25,9 @@ import java.util.UUID;
  */
 @N1qlPrimaryIndexed
 @ViewIndexed(designDoc = "session")
-public interface SessionRepository extends CrudRepository<Session, UUID> {
+public interface SessionRepository extends CrudRepository<Session, String> {
 
-  @View(designDocument = "session", viewName = "byAuthToken")
   Optional<Session> findByAuthToken(String authToken);
+  Optional<Session> findByRefreshToken(String refreshToken);
 
 }

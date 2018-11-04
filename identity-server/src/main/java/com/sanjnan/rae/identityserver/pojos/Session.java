@@ -73,19 +73,22 @@ public class Session extends Base {
   private DateTime expiry;
   private SESSION_TYPE sessionType;
 
-  public Session(UUID tenantId,
+  public Session(String tenantId,
                  Account account,
                  String authToken,
+                 String refreshToken,
                  String remoteAddress,
-                 String applicationId,
+                 String clientId,
                  DateTime expiry,
                  SESSION_TYPE sessionType) {
-    super(UUID.randomUUID(), DateTime.now(), DateTime.now(), account.getId(), account.getId(), account.getName());
+    super(UUID.randomUUID().toString(), DateTime.now(), DateTime.now(), account.getId(), account.getId(), account.getName());
 
     this.tenantId = tenantId;
+    this.accountId = account.getId();
     this.authToken = authToken;
+    this.refreshToken = refreshToken;
     this.remoteAddress = remoteAddress;
-    this.applicationId = applicationId;
+    this.clientId = clientId;
     this.expiry = expiry;
     this.sessionType = sessionType;
   }
@@ -94,11 +97,11 @@ public class Session extends Base {
 
   }
 
-  public UUID getTenantId() {
+  public String getTenantId() {
     return tenantId;
   }
 
-  public void setTenantId(UUID tenantId) {
+  public void setTenantId(String tenantId) {
     this.tenantId = tenantId;
   }
 
@@ -110,6 +113,14 @@ public class Session extends Base {
     this.authToken = authToken;
   }
 
+  public String getRefreshToken() {
+    return refreshToken;
+  }
+
+  public void setRefreshToken(String refreshToken) {
+    this.refreshToken = refreshToken;
+  }
+
   public String getRemoteAddress() {
     return remoteAddress;
   }
@@ -118,19 +129,19 @@ public class Session extends Base {
     this.remoteAddress = remoteAddress;
   }
 
-  public String getApplicationId() {
-    return applicationId;
+  public String getClientId() {
+    return clientId;
   }
 
-  public void setApplicationId(String applicationId) {
-    this.applicationId = applicationId;
+  public void setClientId(String clientId) {
+    this.clientId = clientId;
   }
 
-  public UUID getAccountId() {
+  public String getAccountId() {
     return accountId;
   }
 
-  public void setAccountId(UUID accountId) {
+  public void setAccountId(String accountId) {
     this.accountId = accountId;
   }
 
@@ -150,9 +161,10 @@ public class Session extends Base {
     this.sessionType = sessionType;
   }
 
-  private UUID tenantId;
+  private String tenantId;
   private String authToken;
+  private String refreshToken;
   private String remoteAddress;
-  private String applicationId;
-  private UUID accountId;
+  private String clientId;
+  private String accountId;
 }
