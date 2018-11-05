@@ -3,7 +3,7 @@ package com.sanjnan.rae.identityserver.security.filters;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sanjnan.rae.common.constants.SanjnanConstants;
-import com.sanjnan.rae.common.exception.MismatchedCredentialHeaderAndAuthException;
+import com.sanjnan.rae.common.exception.*;
 import com.sanjnan.rae.identityserver.pojos.H2OTokenResponse;
 import com.sanjnan.rae.identityserver.pojos.H2OUsernameAndTokenResponse;
 import com.sanjnan.rae.identityserver.pojos.Tenant;
@@ -14,7 +14,9 @@ import com.sanjnan.rae.identityserver.services.H2OTokenService;
 import com.sanjnan.rae.identityserver.services.TenantService;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -39,6 +41,11 @@ import java.util.Optional;
  */
 public class H2OAuthenticationFilter extends GenericFilterBean {
 
+  enum AUTHENTICATION_TYPE {
+    TOKEN,
+    REFRESH,
+    USERNAME_PASSWORD
+  }
   private final static Logger logger = Logger.getLogger(H2OAuthenticationFilter.class);
   private AccountService accountService = null;
   private TenantService tenantService = null;
@@ -73,6 +80,8 @@ public class H2OAuthenticationFilter extends GenericFilterBean {
     Optional<String> basicAuth = getOptionalHeader(httpRequest, SanjnanConstants.AUTH_AUTHORIZATION_HEADER);
     Optional<String> remoteAddr = Optional.ofNullable(httpRequest.getRemoteAddr());
     Optional<String> clientId = getOptionalHeader(httpRequest, SanjnanConstants.AUTH_CLIENT_ID_HEADER);
+    String resourcePath = new UrlPathHelper().getPathWithinApplication(httpRequest);
+    String[] resourcePathArray = resourcePath.split("/", -1); // Split the url as many times as required.
     if(!clientId.isPresent()) {
 
       throw new MismatchedCredentialHeaderAndAuthException("Application Id is not provided as header for authentication.");
@@ -91,22 +100,25 @@ public class H2OAuthenticationFilter extends GenericFilterBean {
         username = Optional.ofNullable(basicAuthPair[0]);
         password = Optional.ofNullable(basicAuthPair[1]);
       }
-
     }
-    boolean tokenBasedAuthentication = true;
-    if (token.isPresent() &&
-            tenant.isPresent() ) {
-      tokenBasedAuthentication = true;
+    boolean refreshTokenExpected = false;
+    if (tenant.isPresent() && String.format(SanjnanConstants.REFRESH_TOKEN_URL, tenant.get()).equals(resourcePath)) {
+      refreshTokenExpected = true;
+    }
+    AUTHENTICATION_TYPE authenticationType = AUTHENTICATION_TYPE.TOKEN;
+    if (!refreshTokenExpected && token.isPresent() && tenant.isPresent() ) {
+      authenticationType = AUTHENTICATION_TYPE.TOKEN;
+    }
+    else if (refreshTokenExpected && token.isPresent() && tenant.isPresent()) {
+      authenticationType = AUTHENTICATION_TYPE.REFRESH;
     }
     else if (remoteAddr.isPresent() && tenant.isPresent() && username.isPresent() && password.isPresent()) {
-      tokenBasedAuthentication = false;
+      authenticationType = AUTHENTICATION_TYPE.USERNAME_PASSWORD;
     }
     else {
       throw new MismatchedCredentialHeaderAndAuthException("Insufficient headers for username/password as well token " +
               "based authentication");
     }
-    String resourcePath = new UrlPathHelper().getPathWithinApplication(httpRequest);
-    String[] resourcePathArray = resourcePath.split("/", -1); // Split the url as many times as required.
     if (resourcePathArray.length > 2) {
 
       String urlTenant = resourcePathArray[2];
@@ -126,7 +138,7 @@ public class H2OAuthenticationFilter extends GenericFilterBean {
     }
 
     try {
-      if (!tokenBasedAuthentication && postToAuthenticate(httpRequest, tenant.get(), resourcePath)) {
+      if (authenticationType.equals(AUTHENTICATION_TYPE.USERNAME_PASSWORD) && postToAuthenticate(httpRequest, tenant.get(), resourcePath)) {
         logger.log(Level.INFO,
                 String.format("Trying to authenticate user {%s} by X-Auth-Username method", username));
         processUsernamePasswordAuthentication(httpRequest,
@@ -137,10 +149,16 @@ public class H2OAuthenticationFilter extends GenericFilterBean {
                 username,
                 password);
       }
-      else if (tokenBasedAuthentication) {
+      else if (authenticationType.equals(AUTHENTICATION_TYPE.TOKEN)) {
         logger.log(Level.INFO,
                 String.format("Trying to authenticate user by X-Auth-Token method. Token: {%s}", token));
           processTokenAuthentication(remoteAddr, clientId, tenant, token);
+      }
+      else if (authenticationType.equals(AUTHENTICATION_TYPE.REFRESH)) {
+
+        logger.log(Level.INFO,
+                String.format("Trying to authenticate user by refresh X-Auth-Token method. Token: {%s}", token));
+        processRefreshAuthentication(remoteAddr, clientId, tenant, token);
       }
 
       logger.debug("AuthenticationFilter is passing request down the filter chain");
@@ -149,14 +167,17 @@ public class H2OAuthenticationFilter extends GenericFilterBean {
       SecurityContextHolder.clearContext();
       logger.error("Internal authentication service exception", internalAuthenticationServiceException);
       httpResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+      handleExceptions(internalAuthenticationServiceException, httpResponse);
     } catch (AuthenticationException authenticationException) {
       SecurityContextHolder.clearContext();
       httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, authenticationException.getMessage());
+      handleExceptions(authenticationException, httpResponse);
     } catch (DatatypeConfigurationException e) {
       SecurityContextHolder.clearContext();
       httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
+      handleExceptions(e, httpResponse);
     } catch(Exception e) {
-      e.printStackTrace();
+      handleExceptions(e, httpResponse);
     }
     finally {
     }
@@ -195,14 +216,10 @@ public class H2OAuthenticationFilter extends GenericFilterBean {
                                                      Optional<String> username,
                                                      Optional<String> password) throws IOException, DatatypeConfigurationException {
 
-    Optional<Tenant> tenantOptional = getTenantService(request).getTenant(tenantDiscriminator.get());
-    if (tenantOptional.isPresent()) {
-
-      Tenant tenant =  tenantOptional.get();
-      Authentication resultOfAuthentication
+    Authentication resultOfAuthentication
               = tryToAuthenticateWithUsernameAndPassword(remoteAddr, clientId, tenantDiscriminator, username, password);
       SecurityContextHolder.getContext().setAuthentication(resultOfAuthentication);
-    }
+
   }
 
   private Authentication tryToAuthenticateWithUsernameAndPassword(Optional<String> remoteAddr,
@@ -223,20 +240,36 @@ public class H2OAuthenticationFilter extends GenericFilterBean {
     Authentication resultOfAuthentication = tryToAuthenticateWithToken(remoteAddr,
             clientId,
             tenant,
-            token);
+            token,
+            false);
+    SecurityContextHolder.getContext().setAuthentication(resultOfAuthentication);
+  }
+
+  private void processRefreshAuthentication(Optional<String> remoteAddr,
+                                           Optional<String> clientId,
+                                           Optional<String> tenant,
+                                           Optional<String> token) {
+
+    Authentication resultOfAuthentication = tryToAuthenticateWithToken(remoteAddr,
+            clientId,
+            tenant,
+            token,
+            true);
     SecurityContextHolder.getContext().setAuthentication(resultOfAuthentication);
   }
 
   private Authentication tryToAuthenticateWithToken(Optional<String> remoteAddr,
                                                     Optional<String> clientId,
                                                     Optional<String> tenant,
-                                                    Optional<String> token) {
+                                                    Optional<String> token,
+                                                    boolean refreshTokenExpected) {
     PreAuthenticatedAuthenticationToken requestAuthentication
             = new PreAuthenticatedAuthenticationToken(new H2OTokenPrincipal(remoteAddr,
             clientId,
             tenant,
             token.get(),
-            token), null);
+            token,
+            refreshTokenExpected), null);
     return tryToAuthenticate(requestAuthentication);
   }
 
@@ -268,46 +301,51 @@ public class H2OAuthenticationFilter extends GenericFilterBean {
       }
     }
   }
-  private AccountService getAccountService(HttpServletRequest request) {
+  private void handleExceptions(Exception ex, HttpServletResponse response) {
+    try {
 
-    synchronized (this) {
-
-      if (accountService == null) {
-
-        ServletContext servletContext = request.getServletContext();
-        WebApplicationContext webApplicationContext = WebApplicationContextUtils.getWebApplicationContext(servletContext);
-        accountService =  webApplicationContext.getBean(AccountService.class);
+      if (ex instanceof EntityAlreadyExistsException) {
+        EntityAlreadyExistsException e = (EntityAlreadyExistsException) ex;
+        handleExceptionMsg(HttpStatus.UNPROCESSABLE_ENTITY.value(), e.getErrorCode(), response, e);
+      } else if (ex instanceof NotFoundException) {
+        NotFoundException e = (NotFoundException) ex;
+        handleExceptionMsg(HttpStatus.NOT_FOUND.value(), e.getErrorCode(), response, e);
+      } else {
+        handleExceptionMsg(HttpStatus.UNAUTHORIZED.value(), HttpStatus.UNAUTHORIZED.value(), response, ex);
       }
     }
-    return accountService;
-  }
-
-  private TenantService getTenantService(HttpServletRequest request) {
-
-    synchronized (this) {
-
-      if (tenantService == null) {
-
-        ServletContext servletContext = request.getServletContext();
-        WebApplicationContext webApplicationContext = WebApplicationContextUtils.getWebApplicationContext(servletContext);
-        tenantService =  webApplicationContext.getBean(TenantService.class);
-      }
+    catch(Exception jsonex) {
+      logger.log(Level.ERROR, "Error during error generation", jsonex);
     }
-    return tenantService;
   }
-  private H2OTokenService getTokenService(HttpServletRequest request) {
 
-    synchronized (this) {
+  private void handleExceptionMsg(int status, int errorCode, HttpServletResponse response, Exception e)
+          throws IOException {
+    String tokenJsonResponse;
+    ExceptionResponse er
+            = new ExceptionResponseBuilder()
+            .setStatus(status)
+            .setCode(errorCode)
+            .setMessage(e.getMessage())
+            .setMoreInfo(String.format(SanjnanConstants.EXCEPTION_URL,errorCode))
+            .createExceptionResponse();
+    response.setStatus(status);
+    tokenJsonResponse = new ObjectMapper().writeValueAsString(er);
+    response.addHeader("Content-Type", "application/json");
+    response.getWriter().print(tokenJsonResponse);
 
-      if (tokenService == null) {
-
-        ServletContext servletContext = request.getServletContext();
-        WebApplicationContext webApplicationContext = WebApplicationContextUtils.getWebApplicationContext(servletContext);
-        tokenService =  webApplicationContext.getBean(H2OTokenService.class);
-      }
+    if (e instanceof BadRequestException ||
+            e instanceof BadCredentialsException ) {
+      // these are repetitive exceptions and having stacktrace in the logs does not help us..
+      // rather log becomes too big.
+      // Log only the message so we can keep track
+      logger.error(e.getMessage());
+    } else {
+      // log the entire details.. we need the stack trace here...
+      logger.error(tokenJsonResponse, e);
     }
-    return tokenService;
   }
+
   private Optional<String>
   getOptionalHeader(HttpServletRequest httpRequest, String headerName) {
     return Optional.ofNullable(httpRequest.getHeader(headerName));

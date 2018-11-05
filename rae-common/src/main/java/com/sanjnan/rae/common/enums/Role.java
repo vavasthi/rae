@@ -13,7 +13,8 @@ public enum Role {
     TESTER("tester"), // 1 Tester
     ADMIN("admin"), // 2 Admin
     SUPERADMIN("superadmin"), //3 Super Admin
-    DEVICE("device"); // 4
+    DEVICE("device"), // 4
+    REFRESH("refresh"); // 5 Only for internal use for refresh token.
 
     private final String value;
     private final String role;

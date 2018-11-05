@@ -27,13 +27,15 @@ import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import java.util.logging.Logger;
 
 /**
  * Created by vinay on 1/8/16.
  */
-@SpringBootApplication(scanBasePackages = {"com.sanjnan.rae.identityserver"},
+@EnableWebMvc
+@SpringBootApplication(scanBasePackages = {"com.sanjnan.rae.identityserver", "com.sanjnan.rae.common.exception"},
         exclude = {DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
 @Configuration
 //@EnableSwagger2

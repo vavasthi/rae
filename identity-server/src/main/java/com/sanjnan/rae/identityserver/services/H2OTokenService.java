@@ -15,6 +15,7 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,10 +56,11 @@ public class H2OTokenService  {
   public H2OUsernameAndTokenResponse contains(String tenantDiscriminator,
                                               String remoteAddr,
                                               String applicationId,
-                                              String authToken)
+                                              String authToken,
+                                              boolean refreshTokenExpected)
           throws DatatypeConfigurationException {
 
-    return validateAppToken(tenantDiscriminator, remoteAddr, applicationId, authToken);
+    return validateAppToken(tenantDiscriminator, remoteAddr, applicationId, authToken, refreshTokenExpected);
   }
   public Session create(String tenantDiscriminator,
                         String remoteAddr,
@@ -112,31 +114,36 @@ public class H2OTokenService  {
    * is sent as part of the request, a new token is generated and returned.
    *
    *
-   * @param tenantDiscriminator discriminator for the tenant
    * @param remoteAddr the ip address from which the incoming request came
-   * @param authToken the auth token that needs to be verified.
    * @return token response object.
    * @throws DatatypeConfigurationException
    */
-  public H2OUsernameAndTokenResponse refresh(String tenantDiscriminator,
-                                             String remoteAddr,
-                                             String applicationId,
-                                             String authToken)
+  public H2OUsernameAndTokenResponse refresh(Tenant tenant,
+                                             Account account,
+                                             Session session,
+                                             String remoteAddr)
           throws DatatypeConfigurationException {
 
-    return refreshAppToken(tenantDiscriminator, remoteAddr, applicationId, authToken);
+    return refreshAppToken(tenant, account, session, remoteAddr);
   }
 
   private H2OUsernameAndTokenResponse validateAppToken(String tenantDiscriminator,
                                                        String remoteAddr,
                                                        String applicationId,
-                                                       String authToken) throws DatatypeConfigurationException {
+                                                       String authToken,
+                                                       boolean refreshTokenExpected) throws DatatypeConfigurationException {
 
     Optional<Tenant> tenantOptional = tenantRepository.findByDiscriminator(tenantDiscriminator);
     if (tenantOptional.isPresent()) {
 
       Tenant tenant = tenantOptional.get();
-      Optional<Session> sessionOptional = sessionRepository.findByAuthToken(authToken);
+      Optional<Session> sessionOptional;
+      if (refreshTokenExpected) {
+        sessionOptional = sessionRepository.findByRefreshToken(authToken);
+      }
+      else {
+        sessionOptional = sessionRepository.findByAuthToken(authToken);
+      }
       if (sessionOptional.isPresent()) {
 
         Session session = sessionOptional.get();
@@ -167,46 +174,24 @@ public class H2OTokenService  {
         }
       } else {
 
-        throw new UnauthorizedException(String.format("Token %s doesn't belong to application %s", authToken, applicationId));
+        throw new BadCredentialsException(String.format("Token %s doesn't belong to application %s", authToken, applicationId));
       }
     }
     throw new BadCredentialsException(tenantDiscriminator + "/" + remoteAddr);
   }
 
-  private H2OUsernameAndTokenResponse refreshAppToken(String tenantDiscriminator,
-                                                      String remoteAddr,
-                                                      String applicationId,
-                                                      String authToken)
+  private H2OUsernameAndTokenResponse refreshAppToken(Tenant tenant,
+                                                      Account account,
+                                                      Session session,
+                                                      String remoteAddr)
           throws DatatypeConfigurationException {
 
-    Optional<Tenant> tenantOptional = tenantRepository.findByDiscriminator(tenantDiscriminator);
-    if (tenantOptional.isPresent()) {
-      Tenant tenant = tenantOptional.get();
-      Optional<Session> sessionOptional = sessionRepository.findByAuthToken(authToken);
-      if (sessionOptional.isPresent()) {
-
-        Session session = sessionOptional.get();
-        Optional<Account> accountOptional = accountRepository.findById(session.getAccountId());
-        if (accountOptional.isPresent()) {
-          Account account = accountOptional.get();
-          /** If the user is coming in from an unknown IP address and refresh is called, disallow it and force the user
-           * to login using username and password.
-           */
           if (!account.getRemoteAddresses().contains(remoteAddr)) {
             throw new UnrecoganizedRemoteIPAddressException(remoteAddr);
           }
           H2OUsernameAndTokenResponse response =  assignAuthTokenToUser(tenant, account, session, account.getName());
           SanjnanAuthenticationThreadLocal.INSTANCE.initializeThreadLocals(tenant, account, session);
           return response;
-        }
-        else {
-
-          throw new UnauthorizedException(String.format("Token %s doesn't belong to application %s", authToken, applicationId));
-        }
-      }
-
-    }
-    throw new BadCredentialsException(tenantDiscriminator + "/" + remoteAddr);
   }
   public Session assignAuthTokenToUser(Tenant tenant,
                                        Account account,

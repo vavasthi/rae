@@ -10,6 +10,8 @@
 
 package com.sanjnan.rae.common.constants;
 
+import com.sanjnan.rae.common.enums.Role;
+
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -406,6 +408,7 @@ public class SanjnanConstants {
    * The constant V1_AUTHENTICATE_URL.
    */
   public static final String V1_AUTHENTICATE_URL = VERSION_1 + "/" + TENANT_PARAMETER_PATTERN + "/authenticate";
+  public static final String REFRESH_TOKEN_URL = VERSION_1 + "/%s/authenticate/refresh";
   /**
    * The constant V1_DEVICES_ENDPOINT.
    */
@@ -526,7 +529,7 @@ public class SanjnanConstants {
   /**
    * The constant EXCEPTION_URL.
    */
-  public static final String EXCEPTION_URL = "http://monitoreverywhere.com/errors/%s";
+  public static final String EXCEPTION_URL = "http://sanjnan.com/errors/%s";
   /**
    * The constant DATE_PATTERN.
    */
@@ -627,6 +630,7 @@ public class SanjnanConstants {
   /**
    * The constant ANNOTATION_ROLE_USER.
    */
+  public static final String ANNOTATION_ROLE_REFRESH = "hasAuthority('REFRESH')"; // 0
   public static final String ANNOTATION_ROLE_USER = "hasAuthority('user')"; // 0
   /**
    * The constant ANNOTATION_ROLE_TALK_BACK_USER.

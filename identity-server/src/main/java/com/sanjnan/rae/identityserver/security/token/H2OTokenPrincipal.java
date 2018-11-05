@@ -15,9 +15,11 @@ public class H2OTokenPrincipal extends H2OPrincipal {
                            Optional<String> applicationId,
                            Optional<String> tenant,
                            String name,
-                           Optional<String> token) {
+                           Optional<String> token,
+                           boolean refreshTokenExpected) {
     super(remoteAddr, applicationId, tenant, Optional.ofNullable(name));
     this.token = token;
+    this.refreshTokenExpected = refreshTokenExpected;
   }
 
   public Optional<String> getToken() {
@@ -33,6 +35,14 @@ public class H2OTokenPrincipal extends H2OPrincipal {
     return super.isValid() && validField(token);
   }
 
+  public boolean isRefreshTokenExpected() {
+    return refreshTokenExpected;
+  }
+
+  public void setRefreshTokenExpected(boolean refreshTokenExpected) {
+    this.refreshTokenExpected = refreshTokenExpected;
+  }
+
   @Override
   public String toString() {
     return "H2OTokenPrincipal{" +
@@ -41,4 +51,5 @@ public class H2OTokenPrincipal extends H2OPrincipal {
   }
 
   private Optional<String> token;
+  private boolean refreshTokenExpected;
 }

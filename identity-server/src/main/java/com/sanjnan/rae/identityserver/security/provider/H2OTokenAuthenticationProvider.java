@@ -1,5 +1,7 @@
 package com.sanjnan.rae.identityserver.security.provider;
 
+import com.sanjnan.rae.common.enums.Role;
+import com.sanjnan.rae.identityserver.pojos.H2ORole;
 import com.sanjnan.rae.identityserver.pojos.H2OTokenResponse;
 import com.sanjnan.rae.identityserver.security.token.H2OTokenPrincipal;
 import com.sanjnan.rae.identityserver.services.H2OTokenService;
@@ -30,16 +32,26 @@ public class H2OTokenAuthenticationProvider implements AuthenticationProvider {
   @Override
   public Authentication authenticate(Authentication authentication) throws AuthenticationException {
     H2OTokenPrincipal principal = (H2OTokenPrincipal)authentication.getPrincipal();
-    logger.info("Called authenticated " + principal.toString());
     if (!principal.isValid()) {
       throw new BadCredentialsException("Invalid token");
     }
+    if (principal.isRefreshTokenExpected()) {
+      return processForRefreshToken(principal);
+    }
+    else {
+      return processForAuthToken(principal);
+    }
+  }
+  private Authentication processForAuthToken(H2OTokenPrincipal principal) {
+
+    logger.info("Called authenticated " + principal.toString());
     H2OTokenResponse response = null;
     try {
       response = tokenService.contains(principal.getTenant().get(),
-          principal.getRemoteAddr().get(),
-          principal.getApplicationId().get(),
-          principal.getToken().get()).getResponse();
+              principal.getRemoteAddr().get(),
+              principal.getApplicationId().get(),
+              principal.getToken().get(),
+              false).getResponse();
 
     } catch (DatatypeConfigurationException e) {
       logger.log(Level.ERROR, "XMLGregorian Calendar conversion error.", e);
@@ -50,6 +62,27 @@ public class H2OTokenAuthenticationProvider implements AuthenticationProvider {
 
         response.getH2ORoles().forEach(e -> grantedAuthorityList.add(e));
       }
+      return new PreAuthenticatedAuthenticationToken(principal, response.getAuthToken(), grantedAuthorityList);
+    }
+    throw new BadCredentialsException("Invalid token or token expired");
+  }
+  private Authentication processForRefreshToken(H2OTokenPrincipal principal) {
+
+    logger.info("Called authenticated for refresh token" + principal.toString());
+    H2OTokenResponse response = null;
+    try {
+      response = tokenService.contains(principal.getTenant().get(),
+              principal.getRemoteAddr().get(),
+              principal.getApplicationId().get(),
+              principal.getToken().get(),
+              true).getResponse();
+
+    } catch (DatatypeConfigurationException e) {
+      logger.log(Level.ERROR, "XMLGregorian Calendar conversion error.", e);
+    }
+    if (response != null) {
+      List<GrantedAuthority> grantedAuthorityList = new ArrayList<>();
+      grantedAuthorityList.add(new H2ORole(Role.REFRESH.name()));
       return new PreAuthenticatedAuthenticationToken(principal, response.getAuthToken(), grantedAuthorityList);
     }
     throw new BadCredentialsException("Invalid token or token expired");

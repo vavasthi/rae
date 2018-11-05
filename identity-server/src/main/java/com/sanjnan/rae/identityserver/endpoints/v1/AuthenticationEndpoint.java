@@ -19,6 +19,7 @@ import com.sanjnan.rae.identityserver.security.filters.SanjnanAuthenticationThre
 import com.sanjnan.rae.identityserver.services.H2OTokenService;
 import com.sanjnan.rae.identityserver.utils.SanjnanMessages;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -70,20 +71,20 @@ public class AuthenticationEndpoint extends BaseEndpoint {
     }
   }
 
+  @PreAuthorize(SanjnanConstants.ANNOTATION_ROLE_REFRESH)
   @Transactional
   @RequestMapping(value = SanjnanConstants.V1_AUTHENTICATE_URL + "/refresh", method = RequestMethod.POST)
-  public H2OTokenResponse refresh(@PathVariable("tenant") String tenant) {
+  public H2OTokenResponse refresh(@PathVariable("tenant") String discriminator) {
 
-    HttpServletRequest httpRequest = asHttp(request);
-    Optional<String> tenantHeader = getOptionalHeader(httpRequest, SanjnanConstants.AUTH_TENANT_HEADER);
-    Optional<String> token = getOptionalHeader(httpRequest, SanjnanConstants.AUTH_TOKEN_HEADER);
-    Optional<String> tokenTypeStr = getOptionalHeader(httpRequest, SanjnanConstants.AUTH_TOKEN_TYPE_HEADER);
-    Optional<String> remoteAddr = Optional.ofNullable(httpRequest.getRemoteAddr());
-    Optional<String> applicationId = getOptionalHeader(httpRequest, SanjnanConstants.AUTH_CLIENT_ID_HEADER);
     try {
 
+      Tenant tenant = SanjnanAuthenticationThreadLocal.INSTANCE.getTenantThreadLocal().get();
+      Account account = SanjnanAuthenticationThreadLocal.INSTANCE.getAccountThreadLocal().get();
+      Session session = SanjnanAuthenticationThreadLocal.INSTANCE.getSessionThreadLocal().get();
+      HttpServletRequest httpRequest = asHttp(request);
+      Optional<String> remoteAddr = Optional.ofNullable(httpRequest.getRemoteAddr());
       H2OUsernameAndTokenResponse utResponse
-              = tokenService.refresh(tenantHeader.get(), remoteAddr.get(), applicationId.get(), token.get());
+              = tokenService.refresh(tenant, account, session, remoteAddr.get());
       H2OTokenResponse tokenResponse
               = utResponse.getResponse();
 
