@@ -11,13 +11,13 @@
 package com.sanjnan.rae.identityserver.config;
 
 import com.couchbase.client.java.Bucket;
-import com.sanjnan.rae.identityserver.data.couchbase.TenantRepository;
-import com.sanjnan.rae.identityserver.pojos.Account;
-import com.sanjnan.rae.identityserver.pojos.Session;
-import com.sanjnan.rae.identityserver.pojos.Tenant;
+import com.sanjnan.rae.common.pojos.Account;
+import com.sanjnan.rae.common.pojos.SanjnanClientDetails;
+import com.sanjnan.rae.common.pojos.Session;
+import com.sanjnan.rae.identityserver.tokens.CouchbaseAccessToken;
+import com.sanjnan.rae.identityserver.tokens.CouchbaseRefreshToken;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
@@ -29,7 +29,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Configuration
-@EnableCouchbaseRepositories(basePackages = {"com.sanjnan.rae.identityserver.data.couchbase"})
+@EnableCouchbaseRepositories(basePackages = {"com.sanjnan.rae.identityserver.couchbase"})
 @EnableJpaRepositories
 public class SanjnanCouchbaseConfig extends AbstractCouchbaseConfiguration  {
 
@@ -73,14 +73,9 @@ public class SanjnanCouchbaseConfig extends AbstractCouchbaseConfiguration  {
     return couchbaseCluster().openBucket("accounts");
   }
   @Bean
-  public Bucket tenantBucket() throws Exception {
-    return couchbaseCluster().openBucket("tenants");
-  }
-  @Bean
   public Bucket sessionBucket() throws Exception {
     return couchbaseCluster().openBucket("sessions");
   }
-
   @Bean
   public CouchbaseTemplate campusTemplate() throws Exception {
     CouchbaseTemplate template = new CouchbaseTemplate(
@@ -101,15 +96,6 @@ public class SanjnanCouchbaseConfig extends AbstractCouchbaseConfiguration  {
     return template;
   }
   @Bean
-  public CouchbaseTemplate tenantTemplate() throws Exception {
-    CouchbaseTemplate template = new CouchbaseTemplate(
-            couchbaseCluster().authenticate(couchbaseUsername, couchBasePassword).clusterManager().info(),
-            tenantBucket(),
-            mappingCouchbaseConverter(), translationService());
-    template.setDefaultConsistency(getDefaultConsistency());
-    return template;
-  }
-  @Bean
   public CouchbaseTemplate sessionTemplate() throws Exception {
     CouchbaseTemplate template = new CouchbaseTemplate(
             couchbaseCluster().authenticate(couchbaseUsername, couchBasePassword).clusterManager().info(),
@@ -123,8 +109,10 @@ public class SanjnanCouchbaseConfig extends AbstractCouchbaseConfiguration  {
           RepositoryOperationsMapping baseMapping) {
     try {
       baseMapping.mapEntity(Account.class, accountTemplate());
-      baseMapping.mapEntity(Tenant.class, tenantTemplate());
       baseMapping.mapEntity(Session.class, sessionTemplate());
+      baseMapping.mapEntity(CouchbaseAccessToken.class, sessionTemplate());
+      baseMapping.mapEntity(CouchbaseRefreshToken.class, sessionTemplate());
+      baseMapping.mapEntity(SanjnanClientDetails.class, sessionTemplate());
     } catch (Exception e) {
       //custom Exception handling
     }

@@ -8,13 +8,11 @@
 
 package com.sanjnan.rae.identityserver.security.provider;
 
-import com.sanjnan.rae.identityserver.pojos.Account;
-import com.sanjnan.rae.identityserver.pojos.Session;
-import com.sanjnan.rae.identityserver.pojos.Tenant;
-import com.sanjnan.rae.identityserver.security.token.H2OPrincipal;
+import com.sanjnan.rae.common.pojos.Account;
+import com.sanjnan.rae.common.pojos.Session;
+import com.sanjnan.rae.common.security.token.H2OPrincipal;
 import com.sanjnan.rae.identityserver.services.AccountService;
 import com.sanjnan.rae.identityserver.services.H2OTokenService;
-import com.sanjnan.rae.identityserver.services.TenantService;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -24,7 +22,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 
-import javax.xml.datatype.DatatypeConfigurationException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -40,8 +37,6 @@ public class H2OUsernamePasswordAuthenticationProvider implements Authentication
     @Autowired
     private AccountService accountService;
     @Autowired
-    private TenantService tenantService;
-    @Autowired
     private H2OTokenService tokenService;
 
 
@@ -50,31 +45,24 @@ public class H2OUsernamePasswordAuthenticationProvider implements Authentication
     {
         H2OPrincipal principal = (H2OPrincipal)authentication.getPrincipal();
         Optional<String> remoteAddr = principal.getRemoteAddr();
-        Optional<String> discriminator = principal.getTenant();
         Optional<String> username = principal.getOptionalName();
         Optional<String> clientId = principal.getApplicationId();
         Optional<String> password = (Optional<String>) authentication.getCredentials();
 
-        if (discriminator.isPresent() && username.isPresent() && password.isPresent()) {
+        if (username.isPresent() && password.isPresent()) {
 
-            Optional<Tenant> tenantOptional = tenantService.getTenant(discriminator.get());
-            if (tenantOptional.isPresent()) {
+                if (credentialsValid(username, password)) {
 
-                Tenant tenant = tenantOptional.get();
-                logger.info("tenant = " + tenant.getDiscriminator() + " username " + username.toString());
-                if (credentialsValid(tenant, username, password)) {
-
-                    Optional<Account> accountOptional = accountService.getAccount(tenant, username.get());
+                    Optional<Account> accountOptional = accountService.getAccount(username.get());
                     if (accountOptional.isPresent()) {
 
                         Account account = accountOptional.get();
                         List<GrantedAuthority> grantedAuthorityList = new ArrayList<>();
                         account.getH2ORoles().forEach(e -> grantedAuthorityList.add(e));
-                        Session session = tokenService.create(discriminator.get(), remoteAddr.get(), clientId.get(), username.get(), password.get());
+                        Session session = tokenService.create(remoteAddr.get(), clientId.get(), username.get(), password.get());
                         Authentication auth
                                 = new UsernamePasswordAuthenticationToken(new H2OPrincipal(remoteAddr,
                                 principal.getApplicationId(),
-                                Optional.of(tenant.getDiscriminator()),
                                 username),
                                 password,
                                 grantedAuthorityList);
@@ -83,16 +71,11 @@ public class H2OUsernamePasswordAuthenticationProvider implements Authentication
                 }
 
             }
-        }
-        else {
-
-            throw new BadCredentialsException(INVALID_BACKEND_ADMIN_CREDENTIALS);
-        }
         throw new BadCredentialsException(INVALID_BACKEND_ADMIN_CREDENTIALS);
     }
 
-    private boolean credentialsValid(Tenant tenant, Optional<String> username, Optional<String> password) {
-        return accountService.validateCredentials(tenant, username.get(), password.get());
+    private boolean credentialsValid(Optional<String> username, Optional<String> password) {
+        return accountService.validateCredentials(username.get(), password.get());
     }
 
     @Override

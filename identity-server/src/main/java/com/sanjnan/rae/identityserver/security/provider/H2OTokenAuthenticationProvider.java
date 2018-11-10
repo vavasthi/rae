@@ -1,9 +1,9 @@
 package com.sanjnan.rae.identityserver.security.provider;
 
 import com.sanjnan.rae.common.enums.Role;
-import com.sanjnan.rae.identityserver.pojos.H2ORole;
-import com.sanjnan.rae.identityserver.pojos.H2OTokenResponse;
-import com.sanjnan.rae.identityserver.security.token.H2OTokenPrincipal;
+import com.sanjnan.rae.common.pojos.H2ORole;
+import com.sanjnan.rae.common.pojos.H2OTokenResponse;
+import com.sanjnan.rae.common.security.token.H2OTokenPrincipal;
 import com.sanjnan.rae.identityserver.services.H2OTokenService;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -47,8 +47,7 @@ public class H2OTokenAuthenticationProvider implements AuthenticationProvider {
     logger.info("Called authenticated " + principal.toString());
     H2OTokenResponse response = null;
     try {
-      response = tokenService.contains(principal.getTenant().get(),
-              principal.getRemoteAddr().get(),
+      response = tokenService.contains(principal.getRemoteAddr().get(),
               principal.getApplicationId().get(),
               principal.getToken().get(),
               false).getResponse();
@@ -71,8 +70,7 @@ public class H2OTokenAuthenticationProvider implements AuthenticationProvider {
     logger.info("Called authenticated for refresh token" + principal.toString());
     H2OTokenResponse response = null;
     try {
-      response = tokenService.contains(principal.getTenant().get(),
-              principal.getRemoteAddr().get(),
+      response = tokenService.contains(principal.getRemoteAddr().get(),
               principal.getApplicationId().get(),
               principal.getToken().get(),
               true).getResponse();
