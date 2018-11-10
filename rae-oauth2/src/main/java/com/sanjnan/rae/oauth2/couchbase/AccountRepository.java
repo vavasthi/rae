@@ -8,7 +8,7 @@
  *  Author: vavasthi
  */
 
-package com.sanjnan.rae.identityserver.couchbase;
+package com.sanjnan.rae.oauth2.couchbase;
 
 import com.sanjnan.rae.common.pojos.Account;
 import org.springframework.data.couchbase.core.query.N1qlPrimaryIndexed;

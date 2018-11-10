@@ -1,6 +1,6 @@
-package com.sanjnan.rae.identityserver.tokens;
+package com.sanjnan.rae.common.pojos;
 
-import com.sanjnan.rae.identityserver.converters.SerializableObjectConverter;
+import com.sanjnan.rae.common.converters.SerializableObjectConverter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.security.oauth2.common.OAuth2RefreshToken;

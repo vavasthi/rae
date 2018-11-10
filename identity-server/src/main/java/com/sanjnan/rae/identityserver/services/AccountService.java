@@ -3,7 +3,6 @@ package com.sanjnan.rae.identityserver.services;
 import com.sanjnan.rae.common.exception.EntityNotFoundException;
 import com.sanjnan.rae.common.utils.H2OPasswordEncryptionManager;
 import com.sanjnan.rae.common.utils.ObjectPatcher;
-import com.sanjnan.rae.identityserver.couchbase.AccountRepository;
 import com.sanjnan.rae.common.pojos.Account;
 import com.sanjnan.rae.identityserver.utils.SanjnanMessages;
 import org.apache.log4j.Level;

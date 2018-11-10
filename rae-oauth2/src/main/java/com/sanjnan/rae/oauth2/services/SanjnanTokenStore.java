@@ -1,9 +1,9 @@
-package com.sanjnan.rae.identityserver.services;
+package com.sanjnan.rae.oauth2.services;
 
-import com.sanjnan.rae.identityserver.couchbase.CouchbaseAccessTokenRepository;
-import com.sanjnan.rae.identityserver.couchbase.CouchbaseRefreshTokenRepository;
-import com.sanjnan.rae.identityserver.tokens.CouchbaseAccessToken;
-import com.sanjnan.rae.identityserver.tokens.CouchbaseRefreshToken;
+import com.sanjnan.rae.common.pojos.CouchbaseAccessToken;
+import com.sanjnan.rae.common.pojos.CouchbaseRefreshToken;
+import com.sanjnan.rae.oauth2.couchbase.CouchbaseAccessTokenRepository;
+import com.sanjnan.rae.oauth2.couchbase.CouchbaseRefreshTokenRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.security.oauth2.common.OAuth2RefreshToken;

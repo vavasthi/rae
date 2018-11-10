@@ -1,4 +1,4 @@
-package com.sanjnan.rae.identityserver.config;
+package com.sanjnan.rae.oauth2.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;

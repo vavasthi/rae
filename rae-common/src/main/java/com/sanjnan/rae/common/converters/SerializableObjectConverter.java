@@ -1,4 +1,4 @@
-package com.sanjnan.rae.identityserver.converters;
+package com.sanjnan.rae.common.converters;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.SerializationUtils;

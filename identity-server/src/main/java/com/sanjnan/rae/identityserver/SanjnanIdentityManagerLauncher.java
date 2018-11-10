@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.data.auditing.DateTimeProvider;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import javax.annotation.PostConstruct;
@@ -33,14 +34,17 @@ import java.util.logging.Logger;
  * Created by vinay on 1/8/16.
  */
 @EnableWebMvc
-@SpringBootApplication(scanBasePackages = {"com.sanjnan.rae.identityserver", "com.sanjnan.rae.common.exception"},
-        exclude = {DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
+@SpringBootApplication(scanBasePackages = {"com.sanjnan.rae"}, exclude = {DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class}
+)
 @Configuration
+@EnableJpaRepositories("com.sanjnan.rae")
 //@EnableSwagger2
 public class SanjnanIdentityManagerLauncher extends SpringBootServletInitializer {
 
   @Autowired
   private SetupService setupService;
+  @Autowired
+  private DateTimeService dateTimeService;
 
   Logger logger = Logger.getLogger(SanjnanIdentityManagerLauncher.class.getName());
 
@@ -69,13 +73,9 @@ public class SanjnanIdentityManagerLauncher extends SpringBootServletInitializer
 
   @Bean
   DateTimeProvider dateTimeProvider() {
-    return new H2OAuditingDateTimeProvider(dateTimeService());
+    return new H2OAuditingDateTimeProvider(dateTimeService);
   }
 
-  @Bean
-  DateTimeService dateTimeService() {
-    return new DateTimeService();
-  }
   @Bean
   public Module jodaModule() {
     return new JodaModule();

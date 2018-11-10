@@ -8,14 +8,10 @@
  *  Author: vavasthi
  */
 
-package com.sanjnan.rae.identityserver.config;
+package com.sanjnan.rae.common.config;
 
 import com.couchbase.client.java.Bucket;
-import com.sanjnan.rae.common.pojos.Account;
-import com.sanjnan.rae.common.pojos.SanjnanClientDetails;
-import com.sanjnan.rae.common.pojos.Session;
-import com.sanjnan.rae.identityserver.tokens.CouchbaseAccessToken;
-import com.sanjnan.rae.identityserver.tokens.CouchbaseRefreshToken;
+import com.sanjnan.rae.common.pojos.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,7 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Configuration
-@EnableCouchbaseRepositories(basePackages = {"com.sanjnan.rae.identityserver.couchbase"})
+@EnableCouchbaseRepositories(basePackages = {"com.sanjnan.rae"})
 @EnableJpaRepositories
 public class SanjnanCouchbaseConfig extends AbstractCouchbaseConfiguration  {
 

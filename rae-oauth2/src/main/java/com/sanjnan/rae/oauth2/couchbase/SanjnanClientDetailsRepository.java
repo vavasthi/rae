@@ -1,4 +1,4 @@
-package com.sanjnan.rae.identityserver.couchbase;
+package com.sanjnan.rae.oauth2.couchbase;
 import com.sanjnan.rae.common.pojos.SanjnanClientDetails;
 import org.springframework.data.couchbase.core.query.N1qlPrimaryIndexed;
 import org.springframework.data.couchbase.core.query.ViewIndexed;

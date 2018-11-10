@@ -1,6 +1,6 @@
-package com.sanjnan.rae.identityserver.couchbase;
+package com.sanjnan.rae.oauth2.couchbase;
 
-import com.sanjnan.rae.identityserver.tokens.CouchbaseAccessToken;
+import com.sanjnan.rae.common.pojos.CouchbaseAccessToken;
 import org.springframework.data.couchbase.core.query.N1qlPrimaryIndexed;
 import org.springframework.data.couchbase.core.query.ViewIndexed;
 import org.springframework.data.couchbase.repository.CouchbasePagingAndSortingRepository;

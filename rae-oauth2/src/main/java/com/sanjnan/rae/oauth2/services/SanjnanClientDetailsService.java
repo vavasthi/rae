@@ -1,7 +1,7 @@
-package com.sanjnan.rae.identityserver.services;
+package com.sanjnan.rae.oauth2.services;
 
 import com.sanjnan.rae.common.pojos.SanjnanClientDetails;
-import com.sanjnan.rae.identityserver.couchbase.SanjnanClientDetailsRepository;
+import com.sanjnan.rae.oauth2.couchbase.SanjnanClientDetailsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.provider.ClientDetails;
 import org.springframework.security.oauth2.provider.ClientDetailsService;
