@@ -36,7 +36,7 @@ public class SetupService {
      * This method checks the account repository and makes sure that one super-admin account is populated. It is required
      * for bootstrap purposes.
      */
-    if (accountRepository.count() == 0) {
+/*    if (accountRepository.count() == 0) {
       Account account = new Account();
       account.setName("superadmin");
       account.setEmail("apps@sanjnan.com");
@@ -62,7 +62,7 @@ public class SetupService {
       client.setSecretRequired(false);
 
       clientDetailsRepository.save(client);
-    }
+    }*/
 
     return "Setup Complete!";
   }

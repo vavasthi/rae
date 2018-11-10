@@ -5,6 +5,7 @@ import com.sanjnan.rae.common.utils.H2OPasswordEncryptionManager;
 import com.sanjnan.rae.common.utils.ObjectPatcher;
 import com.sanjnan.rae.common.pojos.Account;
 import com.sanjnan.rae.identityserver.utils.SanjnanMessages;
+import com.sanjnan.rae.oauth2.couchbase.AccountRepository;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;

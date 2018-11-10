@@ -4,6 +4,7 @@ import com.sanjnan.rae.oauth2.couchbase.CouchbaseAccessTokenRepository;
 import com.sanjnan.rae.oauth2.couchbase.CouchbaseRefreshTokenRepository;
 import com.sanjnan.rae.oauth2.services.SanjnanClientDetailsService;
 import com.sanjnan.rae.oauth2.services.SanjnanTokenStore;
+import com.sanjnan.rae.oauth2.services.SanjnanUserDetailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -33,6 +34,9 @@ public class SanjnanAuthorizationServerConfig extends AuthorizationServerConfigu
   private SanjnanClientDetailsService clientDetailsService;
 
   @Autowired
+  private SanjnanUserDetailService userDetailService;
+
+  @Autowired
   private CouchbaseAccessTokenRepository couchbaseAccessTokenRepository;
 
   @Autowired
@@ -49,7 +53,7 @@ public class SanjnanAuthorizationServerConfig extends AuthorizationServerConfigu
   @Override
   public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
     endpoints.tokenStore(tokenStore)
-            .authenticationManager(authenticationManager);
+            .authenticationManager(authenticationManager).userDetailsService(userDetailService);
   }
 
 
