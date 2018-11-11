@@ -60,10 +60,6 @@ public class SanjnanCouchbaseConfig extends AbstractCouchbaseConfiguration  {
   }
 
   @Bean
-  public Bucket identityBucket() throws Exception {
-    return couchbaseCluster().openBucket("identity");
-  }
-  @Bean
   public Bucket accountBucket() throws Exception {
 
     return couchbaseCluster().openBucket("accounts");
@@ -71,15 +67,6 @@ public class SanjnanCouchbaseConfig extends AbstractCouchbaseConfiguration  {
   @Bean
   public Bucket sessionBucket() throws Exception {
     return couchbaseCluster().openBucket("sessions");
-  }
-  @Bean
-  public CouchbaseTemplate campusTemplate() throws Exception {
-    CouchbaseTemplate template = new CouchbaseTemplate(
-            couchbaseCluster().authenticate(couchbaseUsername, couchBasePassword).clusterManager().info(),
-            identityBucket(),
-            mappingCouchbaseConverter(), translationService());
-    template.setDefaultConsistency(getDefaultConsistency());
-    return template;
   }
   @Bean
   public CouchbaseTemplate accountTemplate() throws Exception {

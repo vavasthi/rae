@@ -1,4 +1,4 @@
-package com.sanjnan.rae.identityserver;
+package com.sanjnan.rae.product;
 
 import org.apache.logging.log4j.LoggingException;
 import org.eclipse.jetty.server.*;
@@ -18,11 +18,11 @@ import java.io.File;
  * Created by vinay on 2/3/16.
  */
 @Configuration
-public class SanjnanEmbeddedJettyCustomizer {
+public class SanjnanProductJettyCustomizer {
 
     @Bean
     WebServerFactoryCustomizer<JettyServletWebServerFactory> containerCustomizer(
-            @Value("${server.port:8080}") final int port,
+            @Value("${server.port:8081}") final int port,
             @Value("${jetty.acceptqueuesize:5000}") final String acceptQueueSize,
             @Value("${jetty.threadPool.maxThreads:2000}") final String maxThreads,
             @Value("${jetty.threadPool.minThreads:8}") final String minThreads,
@@ -36,7 +36,7 @@ public class SanjnanEmbeddedJettyCustomizer {
         return container -> {
             container.addServerCustomizers((JettyServerCustomizer) server -> {
                 // Enable logs
-                File logFile = new File(loggingPath + "/scheduler-yyyy_mm_dd.access.log");
+                File logFile = new File(loggingPath + "/product-yyyy_mm_dd.access.log");
                 String logFilename = logFile.getAbsolutePath();
                 if (!logFile.getParentFile().exists() && !logFile.getParentFile().mkdirs()) {
                     throw new LoggingException(String.format("%s could not be created.", logFile.getParentFile().getAbsolutePath()));

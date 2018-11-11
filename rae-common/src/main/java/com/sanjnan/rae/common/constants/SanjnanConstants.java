@@ -396,6 +396,7 @@ public class SanjnanConstants {
    * The constant V1_ACCOUNT_ENDPOINT.
    */
   public static final String V1_ACCOUNT_ENDPOINT = VERSION_1 + "/account";
+  public static final String V1_PRODUCT_ENDPOINT = VERSION_1 + "/product";
   /**
    * The constant V1_ADMINS_ENDPOINT.
    */
@@ -625,6 +626,9 @@ public class SanjnanConstants {
   public static final String ANNOTATION_ROLE_REFRESH = "hasAuthority('REFRESH')"; // 0
   public static final String ANNOTATION_ROLE_USER = "hasAuthority('user')"; // 0
   public static final String ANNOTATION_ROLE_ADMIN_OR_CURRENT_USER = "(returnObject.isPresent() and returnObject.get().email == principal.username) OR hasAuthority('SUPERADMIN')";
+  public static final String ANNOTATION_ROLE_ADMIN_OR_SUPERADMIN = "hasAuthority('SUPERADMIN') OR hasAuthority('ADMIN')";
+  public static final String ANNOTATION_ROLE_SUPERADMIN = "hasAuthority('SUPERADMIN')";
+
   /**
    * The constant ANNOTATION_ROLE_TALK_BACK_USER.
    */

@@ -9,6 +9,7 @@
 package com.sanjnan.rae.identityserver.endpoints.v1;
 
 import com.sanjnan.rae.common.constants.SanjnanConstants;
+import com.sanjnan.rae.common.endpoints.BaseEndpoint;
 import com.sanjnan.rae.common.pojos.SanjnanUserDetail;
 import com.sanjnan.rae.common.pojos.Account;
 import com.sanjnan.rae.identityserver.services.AccountService;

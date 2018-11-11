@@ -1,10 +1,11 @@
 package com.sanjnan.rae.identityserver.services;
 
+import com.sanjnan.rae.common.exception.EntityAlreadyExistsException;
 import com.sanjnan.rae.common.exception.EntityNotFoundException;
 import com.sanjnan.rae.common.utils.H2OPasswordEncryptionManager;
 import com.sanjnan.rae.common.utils.ObjectPatcher;
 import com.sanjnan.rae.common.pojos.Account;
-import com.sanjnan.rae.identityserver.utils.SanjnanMessages;
+import com.sanjnan.rae.common.utils.SanjnanMessages;
 import com.sanjnan.rae.oauth2.couchbase.AccountRepository;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -50,6 +51,10 @@ public class AccountService {
   public Account createAccount(Account account) {
 
 
+    Optional<Account> existingOptionalAccount = accountRepository.findAccountByEmail(account.getEmail());
+    if (existingOptionalAccount.isPresent()) {
+      throw new EntityAlreadyExistsException(String.format(SanjnanMessages.ACCOUNT_WITH_EMAIL_ALREADY_EXISTS, account.getEmail()));
+    }
     if (account.getId() == null) {
       account.setId(UUID.randomUUID().toString());
     }
