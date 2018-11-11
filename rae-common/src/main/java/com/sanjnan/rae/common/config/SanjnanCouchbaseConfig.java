@@ -69,6 +69,10 @@ public class SanjnanCouchbaseConfig extends AbstractCouchbaseConfiguration  {
     return couchbaseCluster().openBucket("sessions");
   }
   @Bean
+  public Bucket productBucket() throws Exception {
+    return couchbaseCluster().openBucket("products");
+  }
+  @Bean
   public CouchbaseTemplate accountTemplate() throws Exception {
     CouchbaseTemplate template
             = new CouchbaseTemplate(couchbaseCluster().authenticate(couchbaseUsername, couchBasePassword).clusterManager().info(),
@@ -87,6 +91,15 @@ public class SanjnanCouchbaseConfig extends AbstractCouchbaseConfiguration  {
     template.setDefaultConsistency(getDefaultConsistency());
     return template;
   }
+  @Bean
+  public CouchbaseTemplate productTemplate() throws Exception {
+    CouchbaseTemplate template = new CouchbaseTemplate(
+            couchbaseCluster().authenticate(couchbaseUsername, couchBasePassword).clusterManager().info(),
+            productBucket(),
+            mappingCouchbaseConverter(), translationService());
+    template.setDefaultConsistency(getDefaultConsistency());
+    return template;
+  }
   @Override
   public void configureRepositoryOperationsMapping(
           RepositoryOperationsMapping baseMapping) {
@@ -96,6 +109,7 @@ public class SanjnanCouchbaseConfig extends AbstractCouchbaseConfiguration  {
       baseMapping.mapEntity(CouchbaseAccessToken.class, sessionTemplate());
       baseMapping.mapEntity(CouchbaseRefreshToken.class, sessionTemplate());
       baseMapping.mapEntity(SanjnanClientDetails.class, sessionTemplate());
+      baseMapping.mapEntity(Product.class, productTemplate());
     } catch (Exception e) {
       //custom Exception handling
     }

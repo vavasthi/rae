@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.security.spec.InvalidParameterSpecException;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -33,7 +34,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping(SanjnanConstants.V1_PRODUCT_ENDPOINT)
-@Api(value="Traditional product endpoint", description="This endpoint provides Product lifecycle operations")
+@Api(value="Product endpoint", description="This endpoint provides Product lifecycle operations")
 public class ProductEndpoint extends BaseEndpoint {
 
   Logger logger = Logger.getLogger(ProductEndpoint.class);
@@ -81,4 +82,17 @@ public class ProductEndpoint extends BaseEndpoint {
     return productService.deleteProduct(id);
   }
 
+  @Transactional
+  @RequestMapping(value = "/search", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+  public Set<Product> searchProduct(@RequestParam("string") String searchString) throws InvalidParameterSpecException {
+
+    return productService.search(searchString);
+  }
+  @Transactional
+  @RequestMapping(value = "/search/rebuild", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+  @PreAuthorize(SanjnanConstants.ANNOTATION_ROLE_SUPERADMIN)
+  public void searchRebuild() throws InvalidParameterSpecException {
+
+    productService.searchRebuild();
+  }
 }

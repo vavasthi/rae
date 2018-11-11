@@ -13,5 +13,6 @@ public class SanjnanMessages {
   public static final String PRODUCT_ALREADY_EXISTS_FOR_EAN = "Product already exists for EAN %s.";
   public static final String PRODUCT_ALREADY_EXISTS_FOR_UPC = "Product already exists for UPC %s.";
   public static final String PRODUCT_ALREADY_EXISTS_FOR_ID = "Product already exists for Id %s.";
+  public static final String PRODUCT_NOT_INDEXED = "Product database not indexed. Call rebuild.";
 }
 

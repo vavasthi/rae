@@ -7,6 +7,7 @@ import com.sanjnan.rae.common.pojos.Product;
 import com.sanjnan.rae.common.utils.ObjectPatcher;
 import com.sanjnan.rae.common.utils.SanjnanMessages;
 import com.sanjnan.rae.product.couchbase.ProductRepository;
+import com.sanjnan.rae.product.utils.ProductSearchTrie;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -74,5 +76,14 @@ public class ProductService {
       return storedProduct;
     }
     throw new EntityNotFoundException(String.format(SanjnanMessages.PRODUCT_NOT_FOUND, id.toString()));
+  }
+
+  public void searchRebuild() {
+
+    ProductSearchTrie.INSTANCE.rebuild(productRepository);
+  }
+  public Set<Product> search(String substring) {
+
+    return ProductSearchTrie.INSTANCE.search(substring);
   }
 }

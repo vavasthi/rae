@@ -17,24 +17,6 @@ public class Product extends Base {
     setCreatedBy(getId());
   }
 
-  public Product(String name, String name1, String brandId, String description, String ean) {
-    super(UUID.randomUUID().toString(), DateTime.now(), DateTime.now(),null, null, "");
-    this.name = name1;
-    this.brandId = brandId;
-    this.description = description;
-    this.ean = ean;
-  }
-
-  @Override
-  public String getName() {
-    return name;
-  }
-
-  @Override
-  public void setName(String name) {
-    this.name = name;
-  }
-
   public String getBrandId() {
     return brandId;
   }
@@ -59,16 +41,16 @@ public class Product extends Base {
     this.ean = ean;
   }
 
+  public String getUpc() {
+    return upc;
+  }
+
   public String getSpecification() {
     return specification;
   }
 
   public void setSpecification(String specification) {
     this.specification = specification;
-  }
-
-  public String getUpc() {
-    return upc;
   }
 
   public void setUpc(String upc) {
@@ -83,7 +65,6 @@ public class Product extends Base {
     this.code = code;
   }
 
-  private String name;
   private String brandId;
   private String description;
   private String specification;

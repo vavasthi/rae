@@ -626,7 +626,7 @@ public class SanjnanConstants {
   public static final String ANNOTATION_ROLE_REFRESH = "hasAuthority('REFRESH')"; // 0
   public static final String ANNOTATION_ROLE_USER = "hasAuthority('user')"; // 0
   public static final String ANNOTATION_ROLE_ADMIN_OR_CURRENT_USER = "(returnObject.isPresent() and returnObject.get().email == principal.username) OR hasAuthority('SUPERADMIN')";
-  public static final String ANNOTATION_ROLE_ADMIN_OR_SUPERADMIN = "hasAuthority('SUPERADMIN') OR hasAuthority('ADMIN')";
+  public static final String ANNOTATION_ROLE_ADMIN_OR_SUPERADMIN = "hasAnyAuthority('SUPERADMIN', 'ADMIN')";
   public static final String ANNOTATION_ROLE_SUPERADMIN = "hasAuthority('SUPERADMIN')";
 
   /**
