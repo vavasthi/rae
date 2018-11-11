@@ -9,8 +9,7 @@
 package com.sanjnan.rae.product.endpoints;
 
 import com.sanjnan.rae.common.constants.SanjnanConstants;
-import com.sanjnan.rae.common.endpoints.BaseEndpoint;
-import com.sanjnan.rae.common.pojos.Account;
+import com.sanjnan.rae.common.endpoints.v1.BaseEndpoint;
 import com.sanjnan.rae.common.pojos.Product;
 import com.sanjnan.rae.product.service.ProductService;
 import io.swagger.annotations.Api;

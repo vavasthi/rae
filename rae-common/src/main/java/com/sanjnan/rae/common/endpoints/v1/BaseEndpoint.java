@@ -1,4 +1,4 @@
-package com.sanjnan.rae.common.endpoints;
+package com.sanjnan.rae.common.endpoints.v1;
 
 import com.sanjnan.rae.common.exception.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
