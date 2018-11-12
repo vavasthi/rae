@@ -349,10 +349,6 @@ public class SanjnanConstants {
    */
   public static final String AUTH_CLIENT_ID_HEADER = "X-Client-Id";
   /**
-   * The constant TENANT_PARAMETER_PATTERN.
-   */
-  public static final String TENANT_PARAMETER_PATTERN = "{tenant}";
-  /**
    * The constant VERSION_1.
    */
   public static final String VERSION_1 = "/v1";
@@ -397,9 +393,10 @@ public class SanjnanConstants {
    */
   public static final String V1_SETUP_ENDPOINT = VERSION_1 + "/setup";
   /**
-   * The constant V1_ACCOUNTS_ENDPOINT.
+   * The constant V1_ACCOUNT_ENDPOINT.
    */
-  public static final String V1_ACCOUNTS_ENDPOINT = VERSION_1 + "/{tenant}/accounts";
+  public static final String V1_ACCOUNT_ENDPOINT = VERSION_1 + "/account";
+  public static final String V1_PRODUCT_ENDPOINT = VERSION_1 + "/product";
   /**
    * The constant V1_ADMINS_ENDPOINT.
    */
@@ -407,12 +404,8 @@ public class SanjnanConstants {
   /**
    * The constant V1_AUTHENTICATE_URL.
    */
-  public static final String V1_AUTHENTICATE_URL = VERSION_1 + "/" + TENANT_PARAMETER_PATTERN + "/authenticate";
+  public static final String V1_AUTHENTICATE_URL = VERSION_1 + "/authenticate";
   public static final String REFRESH_TOKEN_URL = VERSION_1 + "/%s/authenticate/refresh";
-  /**
-   * The constant V1_DEVICES_ENDPOINT.
-   */
-  public static final String V1_DEVICES_ENDPOINT = VERSION_1 + "/{tenant}/devices";
   /**
    * The constant RECURLY_ENDPOINT.
    */
@@ -632,6 +625,10 @@ public class SanjnanConstants {
    */
   public static final String ANNOTATION_ROLE_REFRESH = "hasAuthority('REFRESH')"; // 0
   public static final String ANNOTATION_ROLE_USER = "hasAuthority('user')"; // 0
+  public static final String ANNOTATION_ROLE_ADMIN_OR_CURRENT_USER = "(returnObject.isPresent() and returnObject.get().email == principal.username) OR hasAuthority('SUPERADMIN')";
+  public static final String ANNOTATION_ROLE_ADMIN_OR_SUPERADMIN = "hasAnyAuthority('SUPERADMIN', 'ADMIN')";
+  public static final String ANNOTATION_ROLE_SUPERADMIN = "hasAuthority('SUPERADMIN')";
+
   /**
    * The constant ANNOTATION_ROLE_TALK_BACK_USER.
    */

@@ -9,7 +9,7 @@
 package com.sanjnan.rae.identityserver.test;
 
 import com.sanjnan.rae.common.constants.SanjnanConstants;
-import com.sanjnan.rae.identityserver.pojos.H2OTokenResponse;
+import com.sanjnan.rae.common.pojos.H2OTokenResponse;
 import io.restassured.response.Response;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;

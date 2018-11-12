@@ -5,21 +5,17 @@ import com.sanjnan.rae.common.exception.TokenExpiredException;
 import com.sanjnan.rae.common.exception.UnauthorizedException;
 import com.sanjnan.rae.common.exception.UnrecoganizedRemoteIPAddressException;
 import com.sanjnan.rae.common.utils.H2OPasswordEncryptionManager;
-import com.sanjnan.rae.identityserver.data.couchbase.AccountRepository;
-import com.sanjnan.rae.identityserver.data.couchbase.SessionRepository;
-import com.sanjnan.rae.identityserver.data.couchbase.TenantRepository;
-import com.sanjnan.rae.identityserver.pojos.*;
-import com.sanjnan.rae.identityserver.security.filters.SanjnanAuthenticationThreadLocal;
+import com.sanjnan.rae.identityserver.couchbase.SessionRepository;
+import com.sanjnan.rae.common.pojos.*;
+import com.sanjnan.rae.oauth2.couchbase.AccountRepository;
 import org.apache.commons.codec.binary.Hex;
 import org.eclipse.jetty.http.HttpStatus;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.xml.crypto.Data;
 import javax.xml.datatype.DatatypeConfigurationException;
 import java.util.Optional;
 import java.util.Set;
@@ -35,8 +31,6 @@ public class H2OTokenService  {
   @Autowired
   private AccountRepository accountRepository;
   @Autowired
-  private TenantRepository tenantRepository;
-  @Autowired
   private SessionRepository sessionRepository;
 
 
@@ -47,51 +41,43 @@ public class H2OTokenService  {
    *
    * If the token doesn't exist in the cache but is present in the database, then it is populated in the cache.
    *
-   * @param tenantDiscriminator discriminator for the tenant
    * @param remoteAddr the ip address from which the incoming request came
    * @param authToken the auth token that needs to be verified.
    * @return token response object.
    * @throws DatatypeConfigurationException
    */
-  public H2OUsernameAndTokenResponse contains(String tenantDiscriminator,
-                                              String remoteAddr,
+  public H2OUsernameAndTokenResponse contains(String remoteAddr,
                                               String applicationId,
                                               String authToken,
                                               boolean refreshTokenExpected)
           throws DatatypeConfigurationException {
 
-    return validateAppToken(tenantDiscriminator, remoteAddr, applicationId, authToken, refreshTokenExpected);
+    return validateAppToken(remoteAddr, applicationId, authToken, refreshTokenExpected);
   }
-  public Session create(String tenantDiscriminator,
-                        String remoteAddr,
-                        String clientIdId,
+  public Session create(String remoteAddr,
+                        String clientId,
                         String username,
                         String password) {
 
-    Optional<Tenant> tenantOptional = tenantRepository.findByDiscriminator(tenantDiscriminator);
     try {
 
-      if (tenantOptional.isPresent()) {
-
-        Tenant tenant = tenantOptional.get();
-        Optional<Account> accountOptional = accountRepository.findAccountsByTenantIdAndName(tenant.getId(), username);
+        Optional<Account> accountOptional = accountRepository.findAccountByEmail(username);
         if (accountOptional.isPresent()) {
 
           Account account = accountOptional.get();
           if (H2OPasswordEncryptionManager.INSTANCE.matches(password, account.getPassword())) {
 
-            String sessionId = account.getSessionMap().get(clientIdId);
+            String sessionId = account.getSessionMap().get(clientId);
             if (sessionId != null) {
               Optional<Session> sessionOptional = sessionRepository.findById(sessionId);
               if (sessionOptional.isPresent()) {
                 Session session = sessionOptional.get();
-                deleteToken(tenant, account, session);
+                deleteToken(account, session);
                 accountOptional = accountRepository.findById(account.getId());
                 account = accountOptional.get();
               }
             }
-            Session session = assignAuthTokenToUser(tenant, account, remoteAddr, clientIdId);
-            SanjnanAuthenticationThreadLocal.INSTANCE.initializeThreadLocals(tenant, account, session);
+            Session session = assignAuthTokenToUser(account, remoteAddr, clientId);
             account.getRemoteAddresses().add(remoteAddr);
             accountRepository.save(account);
             return session;
@@ -100,7 +86,6 @@ public class H2OTokenService  {
             throw new BadCredentialsException(String.format("%s is not authorized. Credentials mismatch", username));
           }
         }
-      }
     }
     catch(DatatypeConfigurationException dce) {
 
@@ -118,25 +103,19 @@ public class H2OTokenService  {
    * @return token response object.
    * @throws DatatypeConfigurationException
    */
-  public H2OUsernameAndTokenResponse refresh(Tenant tenant,
-                                             Account account,
+  public H2OUsernameAndTokenResponse refresh(Account account,
                                              Session session,
                                              String remoteAddr)
           throws DatatypeConfigurationException {
 
-    return refreshAppToken(tenant, account, session, remoteAddr);
+    return refreshAppToken(account, session, remoteAddr);
   }
 
-  private H2OUsernameAndTokenResponse validateAppToken(String tenantDiscriminator,
-                                                       String remoteAddr,
+  private H2OUsernameAndTokenResponse validateAppToken(String remoteAddr,
                                                        String applicationId,
                                                        String authToken,
                                                        boolean refreshTokenExpected) throws DatatypeConfigurationException {
 
-    Optional<Tenant> tenantOptional = tenantRepository.findByDiscriminator(tenantDiscriminator);
-    if (tenantOptional.isPresent()) {
-
-      Tenant tenant = tenantOptional.get();
       Optional<Session> sessionOptional;
       if (refreshTokenExpected) {
         sessionOptional = sessionRepository.findByRefreshToken(authToken);
@@ -162,9 +141,7 @@ public class H2OTokenService  {
 
               throw new UnauthorizedException("Unknown IP address, please reauthenticate." + remoteAddr);
             }
-            SanjnanAuthenticationThreadLocal.INSTANCE.initializeThreadLocals(tenant, account, session);
-            return new H2OUsernameAndTokenResponse(tenantDiscriminator,
-                    account.getName(),
+            return new H2OUsernameAndTokenResponse(account.getEmail(),
                     new H2OTokenResponse(authToken,
                             "",
                             account.getComputeRegion(),
@@ -176,12 +153,10 @@ public class H2OTokenService  {
 
         throw new BadCredentialsException(String.format("Token %s doesn't belong to application %s", authToken, applicationId));
       }
-    }
-    throw new BadCredentialsException(tenantDiscriminator + "/" + remoteAddr);
+    throw new BadCredentialsException(remoteAddr);
   }
 
-  private H2OUsernameAndTokenResponse refreshAppToken(Tenant tenant,
-                                                      Account account,
+  private H2OUsernameAndTokenResponse refreshAppToken(Account account,
                                                       Session session,
                                                       String remoteAddr)
           throws DatatypeConfigurationException {
@@ -189,12 +164,10 @@ public class H2OTokenService  {
           if (!account.getRemoteAddresses().contains(remoteAddr)) {
             throw new UnrecoganizedRemoteIPAddressException(remoteAddr);
           }
-          H2OUsernameAndTokenResponse response =  assignAuthTokenToUser(tenant, account, session, account.getName());
-          SanjnanAuthenticationThreadLocal.INSTANCE.initializeThreadLocals(tenant, account, session);
+          H2OUsernameAndTokenResponse response =  assignAuthTokenToUser(account, session, account.getEmail());
           return response;
   }
-  public Session assignAuthTokenToUser(Tenant tenant,
-                                       Account account,
+  public Session assignAuthTokenToUser(Account account,
                                        String remoteAddr,
                                        String applicationId)
           throws DatatypeConfigurationException {
@@ -202,14 +175,20 @@ public class H2OTokenService  {
     if (sessionId != null) {
       Optional<Session> sessionOptional = sessionRepository.findById(sessionId);
       if (sessionOptional.isPresent()) {
-        assignAuthTokenToUser(tenant, account, sessionOptional.get(), account.getName());
+        assignAuthTokenToUser(account, sessionOptional.get(), account.getEmail());
         return sessionOptional.get();
       }
     }
     DateTime expiry = DateTime.now();
     expiry = expiry.plusSeconds(SanjnanConstants.TOKEN_EXPIRY_SECONDS);
     Session session
-            = new Session(tenant.getId().toString(), account, generateAuthToken(tenant, account.getName()), generateAuthToken(tenant, account.getName()), remoteAddr, applicationId, expiry, Session.SESSION_TYPE.APPLICATION_SESSION);
+            = new Session(account,
+            generateAuthToken(account.getEmail()),
+            generateAuthToken(account.getEmail()),
+            remoteAddr,
+            applicationId,
+            expiry,
+            Session.SESSION_TYPE.APPLICATION_SESSION);
     account.getSessionMap().put(applicationId, session.getId().toString());
     accountRepository.save(account);
     sessionRepository.save(session);
@@ -224,36 +203,31 @@ public class H2OTokenService  {
    * @throws DatatypeConfigurationException
    */
   @Transactional
-  public H2OUsernameAndTokenResponse assignAuthTokenToUser(Tenant tenant,
-                                                           Account account,
+  public H2OUsernameAndTokenResponse assignAuthTokenToUser(Account account,
                                                            Session session,
                                                            String username)
           throws DatatypeConfigurationException {
 
-    String authToken = generateAuthToken(tenant, account.getName());
+    String authToken = generateAuthToken(account.getEmail());
     session.setAuthToken(authToken);
-    authToken = generateAuthToken(tenant, account.getName());
+    authToken = generateAuthToken(account.getEmail());
     session.setRefreshToken(authToken);
     sessionRepository.save(session);
-    return new H2OUsernameAndTokenResponse(tenant.getDiscriminator(),
-            username,
+    return new H2OUsernameAndTokenResponse(username,
             new H2OTokenResponse(session.getAuthToken(),
                     session.getRefreshToken(),
                     account.getComputeRegion(),
                     session.getExpiry(),
                     account.getH2ORoles()));
   }
-  public H2OUsernameAndTokenResponse deleteToken(Tenant tenant,
-                                                 Account account,
+  public H2OUsernameAndTokenResponse deleteToken(Account account,
                                                  Session session)
           throws DatatypeConfigurationException {
 
     account.getSessionMap().remove(session.getClientId());
     accountRepository.save(account);
     sessionRepository.delete(session);
-    SanjnanAuthenticationThreadLocal.INSTANCE.clear();
-    return new H2OUsernameAndTokenResponse(tenant.getDiscriminator(),
-            account.getName(),
+    return new H2OUsernameAndTokenResponse(account.getEmail(),
             new H2OTokenResponse("",
                     "",
                     null,
@@ -261,13 +235,12 @@ public class H2OTokenService  {
                     account.getH2ORoles()));
   }
 
-  private String generateAuthToken(Tenant tenant, String username) {
+  private String generateAuthToken(String username) {
     UUID uuid1 = UUID.randomUUID();
     UUID uuid2 = UUID.randomUUID();
 
     String token = Long.toHexString(uuid1.getLeastSignificantBits()) +
             Long.toHexString(uuid1.getMostSignificantBits()) +
-            Hex.encodeHexString(tenant.getName().getBytes()) +
             Long.toHexString(uuid2.getLeastSignificantBits()) +
             Long.toHexString(uuid2.getMostSignificantBits()) +
             Hex.encodeHexString(username.getBytes());

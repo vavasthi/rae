@@ -9,14 +9,22 @@
 package com.sanjnan.rae.identityserver.endpoints.v1;
 
 import com.sanjnan.rae.common.constants.SanjnanConstants;
-import com.sanjnan.rae.identityserver.data.couchbase.AccountRepository;
-import com.sanjnan.rae.identityserver.data.couchbase.TenantRepository;
-import com.sanjnan.rae.identityserver.pojos.Account;
+import com.sanjnan.rae.common.endpoints.v1.BaseEndpoint;
+import com.sanjnan.rae.common.pojos.SanjnanUserDetail;
+import com.sanjnan.rae.common.pojos.Account;
 import com.sanjnan.rae.identityserver.services.AccountService;
+import com.sanjnan.rae.oauth2.couchbase.AccountRepository;
+import com.sanjnan.rae.oauth2.services.SanjnanTokenStore;
+import io.swagger.annotations.Api;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.common.OAuth2AccessToken;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,7 +39,8 @@ import java.util.UUID;
  * Created by vinay on 1/4/16.
  */
 @RestController
-@RequestMapping(SanjnanConstants.V1_ACCOUNTS_ENDPOINT)
+@RequestMapping(SanjnanConstants.V1_ACCOUNT_ENDPOINT)
+@Api(value="Traditional account endpoint", description="This endpoint provides Account lifecycle operations")
 public class AccountEndpoint extends BaseEndpoint {
 
   Logger logger = Logger.getLogger(AccountEndpoint.class);
@@ -39,43 +48,72 @@ public class AccountEndpoint extends BaseEndpoint {
   @Autowired
   private AccountRepository accountRepository;
   @Autowired
-  private TenantRepository tenantRepository;
-  @Autowired
   private AccountService accountService;
+  @Autowired
+  private SanjnanTokenStore tokenStore;
+  @Autowired
+  private DefaultTokenServices defaultTokenServices;
 
 
 
   @Transactional(readOnly = true)
-  @RequestMapping(value = "/{id_or_name}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-  @PreAuthorize(SanjnanConstants.ANNOTATION_ROLE_USER_ADMIN_AND_TENANT_ADMIN)
-  public Optional<Account> getAccount(@PathVariable("tenant") String tenantDiscriminator, @PathVariable("id_or_name") String id_or_name) throws IOException {
+  @RequestMapping(method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+  public Optional<Account> getAccount() throws IOException {
 
-    return accountService.getAccount(tenantDiscriminator, id_or_name);
+    SanjnanUserDetail userDetail = (SanjnanUserDetail)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    Account account = userDetail.getAccount();
+    if (account != null) {
+
+      account.setPassword(null);
+    }
+    return Optional.of(account);
+  }
+
+  @Transactional(readOnly = true)
+  @RequestMapping(value = "/{idOrUsername}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+  @PostAuthorize(SanjnanConstants.ANNOTATION_ROLE_ADMIN_OR_CURRENT_USER)
+  public Optional<Account> getAccount(@PathVariable("idOrUsername") String id_or_username) throws IOException {
+
+    Optional<Account> optionalAccount = accountService.getAccount(id_or_username);
+    if (optionalAccount.isPresent()) {
+      Account account = optionalAccount.get();
+      account.setPassword(null);
+      optionalAccount = Optional.of(account);
+    }
+    return optionalAccount;
   }
 
   @Transactional
   @PreAuthorize(SanjnanConstants.ANNOTATION_ROLE_ADMIN_AND_TENANT_ADMIN)
   @RequestMapping(method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
-  public Account createAccount(@PathVariable("tenant") String tenant, @RequestBody @Valid Account account) {
-    return accountService.createAccount(tenant, account);
+  public Account createAccount(@RequestBody @Valid Account account) {
+    return accountService.createAccount(account);
   }
 
   @Transactional
   @PreAuthorize(SanjnanConstants.ANNOTATION_ROLE_USER_ADMIN_AND_TENANT_ADMIN)
   @RequestMapping(value = "/{id}", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
-  public Account updateAccount(@PathVariable("tenant") String tenant,
-                               @PathVariable("id") UUID id,
+  public Account updateAccount(@PathVariable("id") UUID id,
                                @RequestBody @Valid Account account) throws InvocationTargetException, IllegalAccessException {
-    return accountService.updateAccount(tenant, id, account);
+    return accountService.updateAccount(id, account);
   }
 
   @Transactional
   @RequestMapping(value = "/{id}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
   @PreAuthorize(SanjnanConstants.ANNOTATION_ROLE_ADMIN_AND_TENANT_ADMIN)
-  public Account deleteAccount(@PathVariable("tenant") String tenant,
-                               @PathVariable("id") UUID id) throws InvalidParameterSpecException {
+  public Account deleteAccount(@PathVariable("id") UUID id) throws InvalidParameterSpecException {
 
-    return accountService.deleteAccount(tenant, id);
+    return accountService.deleteAccount(id);
+  }
+  @Transactional(readOnly = true)
+  @RequestMapping(value = "/logout", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+  public Optional<Account> logout() throws IOException {
+
+    OAuth2Authentication oAuth2Authentication = (OAuth2Authentication)SecurityContextHolder.getContext().getAuthentication();
+    OAuth2AccessToken accessToken = defaultTokenServices.createAccessToken(oAuth2Authentication);
+    Optional<Account> accountOptional = accountRepository.findAccountByEmail(oAuth2Authentication.getName());
+    tokenStore.removeAccessToken(accessToken);
+    return accountOptional;
   }
 
 }
