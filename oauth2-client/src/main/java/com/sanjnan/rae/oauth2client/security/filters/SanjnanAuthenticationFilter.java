@@ -8,13 +8,21 @@
 
 package com.sanjnan.rae.oauth2client.security.filters;
 
+import com.couchbase.client.deps.com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.sanjnan.rae.common.constants.SanjnanConstants;
+import com.sanjnan.rae.common.exception.*;
 import com.sanjnan.rae.common.security.token.SanjnanOAuthTokenPrincipal;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.common.exceptions.BadClientCredentialsException;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.web.filter.GenericFilterBean;
 
@@ -55,9 +63,9 @@ public class SanjnanAuthenticationFilter extends GenericFilterBean {
                        ServletResponse response,
                        FilterChain chain) throws IOException, ServletException {
 
+    HttpServletResponse httpResponse = asHttp(response);
     try {
     HttpServletRequest httpRequest = asHttp(request);
-    HttpServletResponse httpResponse = asHttp(response);
 
     Optional<String> token = getOptionalParameter(httpRequest,"token");
     Optional<String> tokenType = getOptionalParameter(httpRequest,"token");
@@ -65,12 +73,18 @@ public class SanjnanAuthenticationFilter extends GenericFilterBean {
     SanjnanOAuthTokenPrincipal authTokenPrincipal = new SanjnanOAuthTokenPrincipal(token, tokenType, authorizationHeader);
     processTokenAuthentication(authTokenPrincipal);
     chain.doFilter(request, response);
-    } catch (InternalAuthenticationServiceException internalAuthenticationServiceException) {
+    } catch (InternalAuthenticationServiceException e) {
       SecurityContextHolder.clearContext();
-      logger.error("Internal authentication service exception", internalAuthenticationServiceException);
-    } catch (AuthenticationException authenticationException) {
+      handleExceptions(e, asHttp(response));
+      logger.error("Internal authentication service exception", e);
+    } catch (AuthenticationException e) {
       SecurityContextHolder.clearContext();
-    } finally {
+      handleExceptions(e, asHttp(response));
+    } catch(Exception e) {
+
+      handleExceptions(e, asHttp(response));
+    }
+    finally {
     }
   }
 
@@ -102,6 +116,52 @@ public class SanjnanAuthenticationFilter extends GenericFilterBean {
     logger.debug("User successfully authenticated");
     return responseAuthentication;
   }
+  private void handleExceptions(Exception ex, HttpServletResponse response) {
+    try {
+
+      if (ex instanceof EntityAlreadyExistsException) {
+        EntityAlreadyExistsException e = (EntityAlreadyExistsException) ex;
+        handleExceptionMsg(HttpStatus.UNPROCESSABLE_ENTITY.value(), e.getErrorCode(), response, e);
+      } else if (ex instanceof NotFoundException) {
+        NotFoundException e = (NotFoundException) ex;
+        handleExceptionMsg(HttpStatus.NOT_FOUND.value(), e.getErrorCode(), response, e);
+      } else {
+        handleExceptionMsg(HttpStatus.UNAUTHORIZED.value(), HttpStatus.UNAUTHORIZED.value(), response, ex);
+      }
+    }
+    catch(Exception jsonex) {
+      logger.log(Level.ERROR, "Error during error generation", jsonex);
+    }
+  }
+
+  private void handleExceptionMsg(int status, int errorCode, HttpServletResponse response, Exception e)
+          throws IOException {
+    ExceptionResponse er
+            = new ExceptionResponseBuilder()
+            .setStatus(status)
+            .setCode(errorCode)
+            .setMessage(e.getMessage())
+            .setMoreInfo(String.format(SanjnanConstants.EXCEPTION_URL,errorCode))
+            .createExceptionResponse();
+    response.setStatus(status);
+    Gson gson = new Gson();
+    String tokenJsonResponse = gson.toJson(er);
+    response.addHeader("Content-Type", "application/json");
+    response.getWriter().print(tokenJsonResponse);
+
+    if (e instanceof BadRequestException ||
+            e instanceof BadCredentialsException ||
+            e instanceof BadClientCredentialsException ) {
+      // these are repetitive exceptions and having stacktrace in the logs does not help us..
+      // rather log becomes too big.
+      // Log only the message so we can keep track
+      logger.error(e.getMessage());
+    } else {
+      // log the entire details.. we need the stack trace here...
+      logger.error(tokenJsonResponse, e);
+    }
+  }
+
   private Optional<String> getOptionalParameter(HttpServletRequest httpRequest, String parameterName) {
     String[] values = httpRequest.getParameterValues(parameterName);
     if (values.length == 0) {
